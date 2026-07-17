@@ -9,8 +9,6 @@ shared_scripts {
     '@ox_lib/init.lua',
     'config.lua',
     'configStore.lua',
-    'blackwater.lua',
-    'saintDenis.lua'
 }
 
 client_scripts {

@@ -22,6 +22,10 @@ files {
     'html/index.html'
 }
 
+server_scripts {
+    'server/versionchecker.lua'
+}
+
 ox_libs {
     'locale',
 }

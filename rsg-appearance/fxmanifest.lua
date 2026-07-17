@@ -29,7 +29,6 @@ server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'server/sv_appearance.lua',
     'server/sv_clothing.lua',
-    'server/versionchecker.lua',
 }
 
 ui_page 'html/index.html'
