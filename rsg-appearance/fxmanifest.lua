@@ -4,7 +4,7 @@ game 'rdr3'
 lua54 'yes'
 
 description 'rsg-appearance v3.1 - HTML UI Edition with Naked Body System'
-version '3.1.0'
+version '1.0.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
