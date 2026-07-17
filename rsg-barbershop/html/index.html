@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barbershop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --red: #8B0000;
+            --red-light: #A52A2A;
+            --red-dark: #5C0000;
+            --black: #0a0a0a;
+            --black-light: #1a1a1a;
+            --gray-dark: #2a2a2a;
+            --gray: #5a5044;
+            --gray-light: #7a6e5d;
+            --white: #e0d7c6;
+            --white-dim: #b8a88a;
+            --green: #4a7c23;
+            --gold: #c4a574;
+        }
+
+        body {
+            font-family: 'Philosopher', 'Times New Roman', Times, serif;
+            background: transparent;
+            color: var(--white);
+            overflow-x: hidden;
+            overflow-y: auto;
+            user-select: none;
+        }
+
+        #app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            transform-origin: top left;
+        }
+        
+        #app.visible { display: block; }
+
+        /* LEFT PANEL */
+        .left-panel {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 320px;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.95) 80%, rgba(10,10,10,0) 100%);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-title {
+            padding: 40px 25px 20px;
+            border-bottom: 1px solid var(--gray-dark);
+        }
+
+        .panel-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--white);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 5px;
+        }
+
+        .panel-title .subtitle {
+            font-size: 14px;
+            color: var(--gray-light);
+            letter-spacing: 2px;
+        }
+
+        .player-money {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 18px;
+            color: var(--green);
+        }
+
+        .red-line {
+            height: 2px;
+            background: linear-gradient(90deg, var(--red) 0%, var(--red-dark) 70%, transparent 100%);
+        }
+
+        .menu-content {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .menu-content::-webkit-scrollbar { width: 3px; }
+        .menu-content::-webkit-scrollbar-track { background: var(--black); }
+        .menu-content::-webkit-scrollbar-thumb { background: var(--gray-light); }
+
+        .menu-section-title {
+            font-size: 11px;
+            color: var(--gray-light);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 15px 25px 10px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .menu-item:hover { background: rgba(139, 0, 0, 0.15); }
+        .menu-item.active { background: rgba(139, 0, 0, 0.25); }
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--red);
+        }
+
+        .menu-label {
+            flex: 1;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
+        .menu-price {
+            font-size: 14px;
+            color: var(--gold);
+        }
+
+        .panel-footer {
+            padding: 15px 25px;
+            border-top: 1px solid var(--gray-dark);
+            flex-shrink: 0;
+            overflow: visible;
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
+            background: rgba(10, 10, 10, 0.98);
+        }
+
+        .footer-btns { display: flex; flex-direction: column; gap: 10px; overflow: visible; }
+
+        .btn {
+            flex: 1;
+            padding: 12px 15px;
+            font-family: inherit;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back { background: var(--gray-dark); color: var(--white); }
+        .btn-back:hover { background: var(--gray); }
+        .btn-buy { background: var(--green); color: var(--white); }
+        .btn-buy:hover { background: #5a9c2a; }
+        .btn-buy:disabled { background: var(--gray); cursor: not-allowed; }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 380px;
+            height: 100%;
+            background: linear-gradient(270deg, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.95) 80%, rgba(10,10,10,0) 100%);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .right-panel.visible { display: flex; }
+
+        .settings-header {
+            padding: 40px 25px 20px;
+            border-bottom: 1px solid var(--gray-dark);
+        }
+
+        .settings-header h2 {
+            font-size: 22px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .settings-content {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .settings-content::-webkit-scrollbar { width: 3px; }
+        .settings-content::-webkit-scrollbar-track { background: var(--black); }
+        .settings-content::-webkit-scrollbar-thumb { background: var(--gray-light); }
+
+        .control-group { margin-bottom: 25px; }
+        .look-actions { display: flex; gap: 8px; margin-top: 18px; }
+        .look-actions .btn { padding: 10px 8px; font-size: 11px; }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label .name { font-size: 14px; color: var(--white-dim); }
+        .control-label .value { font-size: 14px; color: var(--red); font-weight: 600; }
+
+        .slider-row { display: flex; align-items: center; gap: 10px; }
+
+        .slider-btn {
+            width: 32px;
+            height: 32px;
+            background: var(--gray-dark);
+            border: none;
+            color: var(--white);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .slider-btn:hover { background: var(--red-dark); }
+
+        input[type="range"] {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: var(--gray-dark);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--red);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* ITEM INFO */
+        .item-info {
+            background: var(--black-light);
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 3px solid var(--red);
+        }
+
+        .item-info .name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .item-info .color-name {
+            font-size: 14px;
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+
+        .item-info .price {
+            font-size: 18px;
+            color: var(--green);
+        }
+        .item-info .price.expensive { color: var(--red); }
+
+        /* CAMERA */
+        .camera-controls {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cam-row { display: flex; gap: 5px; }
+
+        .cam-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid var(--gray-dark);
+            color: var(--white);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .cam-btn:hover { background: var(--red-dark); border-color: var(--red); }
+
+        /* TOTAL */
+        .total-info {
+            padding: 15px;
+            background: var(--black-light);
+            border-top: 1px solid var(--gray-dark);
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .total-row.final {
+            font-size: 18px;
+            font-weight: 600;
+            border-top: 1px solid var(--gray-dark);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .total-price { color: var(--gold); }
+        .total-price.final { color: var(--green); }
+
+        .ui-scale-control {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 2000;
+            width: 336px;
+            display: none;
+            padding: 14.4px 19.2px;
+            background: rgba(10, 10, 10, 0.94);
+            border: 1px solid var(--gray-dark);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+        }
+
+        .ui-scale-control.visible { display: block; }
+        .ui-scale-header { display: flex; justify-content: space-between; margin-bottom: 9.6px; }
+        .ui-scale-label { color: var(--white-dim); font-size: 18px; letter-spacing: 1.2px; text-transform: uppercase; }
+        .ui-scale-value { color: var(--white); font-size: 19.2px; font-weight: 700; }
+        .ui-scale-control input { width: 100%; accent-color: var(--red-light); cursor: pointer; }
+
+        /* NOTIFICATION */
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid var(--red);
+            font-size: 16px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .notification.visible { opacity: 1; }
+        .notification.success { border-color: var(--green); }
+        .notification.error { border-color: var(--red); }
+
+        /* HINT */
+        .hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: var(--gray-light);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+            <div class="panel-title">
+                <h1 id="shop-name">Barbershop</h1>
+                <div class="subtitle">Haircut &amp; Grooming</div>
+                <div class="player-money">
+                    <span>$</span>
+                    <span id="player-cash">0.00</span>
+                </div>
+            </div>
+            <div class="red-line"></div>
+            
+            <div class="menu-content">
+                <div class="menu-section-title">Services</div>
+                <div id="categories-list"></div>
+            </div>
+            
+            <div class="panel-footer">
+                <div class="total-info">
+                    <div class="total-row" id="total-hair" style="display:none;">
+                        <span>Hair</span>
+                        <span class="total-price" id="price-hair">$0.00</span>
+                    </div>
+                    <div class="total-row" id="total-beard" style="display:none;">
+                        <span>Beard</span>
+                        <span class="total-price" id="price-beard">$0.00</span>
+                    </div>
+                    <div class="total-row" id="total-eyebrows" style="display:none;">
+                        <span>Eyebrows</span>
+                        <span class="total-price" id="price-eyebrows">$0.00</span>
+                    </div>
+                    <div class="total-row" id="total-makeup" style="display:none;">
+                        <span>Makeup</span>
+                        <span class="total-price" id="price-makeup">$0.00</span>
+                    </div>
+                    <div class="total-row final">
+                        <span>Total</span>
+                        <span class="total-price final" id="total-price">$0.00</span>
+                    </div>
+                </div>
+                <div class="footer-btns">
+                    <button class="btn btn-buy" id="btn-buy" onclick="App.buyStyle()">Purchase</button>
+                    <button class="btn btn-back" onclick="App.closeShop()">← Exit</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RIGHT PANEL -->
+        <div class="right-panel" id="right-panel">
+            <div class="settings-header">
+                <h2 id="category-title">Hairstyle</h2>
+            </div>
+            <div class="red-line"></div>
+            
+            <div class="settings-content">
+                <div id="style-controls"></div>
+                <div id="color-controls"></div>
+                
+                <div class="item-info">
+                    <div class="name" id="info-name">-</div>
+                    <div class="color-name" id="info-color">-</div>
+                    <div class="price" id="info-price">$0.00</div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- CAMERA -->
+        <div class="camera-controls">
+            <div class="cam-row">
+                <button class="cam-btn" onclick="App.moveCamera('up')">▲</button>
+            </div>
+            <div class="cam-row">
+                <button class="cam-btn" onclick="App.moveCamera('left')">◄</button>
+                <button class="cam-btn" onclick="App.moveCamera('reset')">●</button>
+                <button class="cam-btn" onclick="App.moveCamera('right')">►</button>
+            </div>
+            <div class="cam-row">
+                <button class="cam-btn" onclick="App.moveCamera('down')">▼</button>
+            </div>
+        </div>
+        
+        <!-- NOTIFICATION -->
+        <div class="notification" id="notification">
+            <span id="notification-text"></span>
+        </div>
+        
+        <!-- HINT -->
+        <div class="hint">
+            ← → Select Style &nbsp;|&nbsp; ↑ ↓ Select Color &nbsp;|&nbsp; E Purchase &nbsp;|&nbsp; ESC Exit
+        </div>
+    </div>
+
+    <div class="ui-scale-control" id="ui-scale-control">
+        <div class="ui-scale-header">
+            <span class="ui-scale-label">Interface Scale</span>
+            <span class="ui-scale-value" id="ui-scale-value">1.00x</span>
+        </div>
+        <input id="ui-scale-slider" type="range" min="0.25" max="3" step="0.05" value="1"
+            oninput="App.previewScale(this.value)" onchange="App.saveScale(this.value)">
+    </div>
+    
+    <script>
+        const BASE_UI_SCALE = 1.4;
+
+        const App = {
+            isOpen: false,
+            uiScale: 1,
+            scaleModifier: 0,
+            isMale: true,
+            playerMoney: 0,
+            prices: {},
+            hairsData: null,
+            makeupData: null,
+            currentMakeup: null,
+            
+            selectedCategory: null,
+            selectedStyleIndex: 0,
+            selectedColorIndex: 0,
+            
+            // Selected for purchase
+            selectedHair: null,
+            selectedBeard: null,
+            selectedEyebrows: null,
+            selectedMakeup: null,
+            eyebrowsState: {},
+            makeupState: {},
+            looks: [],
+            selectedLookIndex: 0,
+            currentBarberStyle: null,
+            originalHairStyle: 0,
+            originalHairColor: 0,
+            originalBeardStyle: 0,
+            originalBeardColor: 0,
+            originalSelections: {},
+            originalEyebrowsState: {},
+            originalMakeupState: {},
+            
+            categoryNames: {
+                'hair': 'Hairstyle',
+                'beard': 'Beard',
+                'eyebrows': 'Eyebrows',
+                'makeup': 'Makeup',
+                'looks': 'Looks'
+            },
+
+            setScale: function(scale, modifier) {
+                const parsedScale = Number(scale);
+                this.uiScale = Number.isFinite(parsedScale) ? Math.max(0.25, Math.min(3, parsedScale)) : 1;
+                if (modifier !== undefined) this.scaleModifier = Number(modifier) || 0;
+                const effectiveScale = BASE_UI_SCALE * Math.max(0.25, Math.min(3, this.uiScale + this.scaleModifier));
+                const app = document.getElementById('app');
+                app.style.transform = `scale(${effectiveScale})`;
+                app.style.width = `${100 / effectiveScale}%`;
+                app.style.height = `${100 / effectiveScale}%`;
+                document.getElementById('ui-scale-slider').value = this.uiScale;
+                document.getElementById('ui-scale-value').textContent = `${this.uiScale.toFixed(2)}x`;
+            },
+
+            previewScale: function(scale) {
+                this.setScale(scale);
+            },
+
+            saveScale: function(scale) {
+                this.setScale(scale);
+                fetch('https://rsg-barbershop/setUiScale', {
+                    method: 'POST',
+                    body: JSON.stringify({ scale: this.uiScale })
+                });
+            },
+            
+            init: function(data) {
+                this.setScale(data.scale === undefined ? this.uiScale : data.scale, data.scaleModifier);
+                this.isOpen = true;
+                this.isMale = data.isMale;
+                this.playerMoney = data.money || 0;
+                this.prices = data.prices || { hair: 2.50, beard: 1.50, makeup: 15.0 };
+                this.hairsData = data.hairsData || { hair: [], beard: [] };
+                this.originalSelections = data.currentSelections || {};
+                this.makeupData = data.makeupData || null;
+                this.currentMakeup = data.currentMakeup || {};
+                this.eyebrowsData = data.eyebrowsData || {};
+                this.currentEyebrows = data.currentEyebrows || {};
+                this.looks = Array.isArray(data.looks) ? data.looks : [];
+                this.selectedLookIndex = 0;
+                this.currentBarberStyle = data.currentBarberStyle || null;
+                this.eyebrowsState = this._eyebrowsDefaults();
+                this.makeupState = this._makeupDefaults();
+                this.originalEyebrowsState = { ...this.eyebrowsState };
+                this.originalMakeupState = { ...this.makeupState };
+                
+                this.selectedCategory = null;
+                this.selectedHair = null;
+                this.selectedBeard = null;
+                this.selectedEyebrows = null;
+                this.selectedMakeup = null;
+                
+                document.getElementById('shop-name').textContent = data.shopName || 'Barbershop';
+                document.getElementById('player-cash').textContent = this.playerMoney.toFixed(2);
+                
+                this.renderCategories();
+                this.updateTotal();
+                
+                document.getElementById('app').classList.add('visible');
+                document.getElementById('ui-scale-control').classList.add('visible');
+                document.getElementById('right-panel').classList.remove('visible');
+            },
+            
+            renderCategories: function() {
+                const container = document.getElementById('categories-list');
+                container.innerHTML = '';
+                
+                // Hair
+                if (this.hairsData.hair && this.hairsData.hair.length > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item' + (this.selectedCategory === 'hair' ? ' active' : '');
+                    div.innerHTML = `
+                        <span class="menu-label">${this.categoryNames['hair']}</span>
+                        <span class="menu-price">$${this.prices.hair.toFixed(2)}</span>
+                    `;
+                    div.onclick = () => this.selectCategory('hair');
+                    container.appendChild(div);
+                }
+                
+                // Beard (men only)
+                if (this.isMale && this.hairsData.beard && this.hairsData.beard.length > 0) {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item' + (this.selectedCategory === 'beard' ? ' active' : '');
+                    div.innerHTML = `
+                        <span class="menu-label">${this.categoryNames['beard']}</span>
+                        <span class="menu-price">$${this.prices.beard.toFixed(2)}</span>
+                    `;
+                    div.onclick = () => this.selectCategory('beard');
+                    container.appendChild(div);
+                }
+                
+                // Shave hair (bald)
+                const divHairShave = document.createElement('div');
+                divHairShave.className = 'menu-item';
+                divHairShave.innerHTML = `
+                    <span class="menu-label">Shave Hair</span>
+                    <span class="menu-price">$${(this.prices.hairShave || this.prices.hair * 0.5).toFixed(2)}</span>
+                `;
+                divHairShave.onclick = () => this.removeHair();
+                container.appendChild(divHairShave);
+
+                // Remove beard (men only)
+                if (this.isMale) {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item';
+                    div.innerHTML = `
+                        <span class="menu-label">Shave Beard</span>
+                        <span class="menu-price">$${(this.prices.beard * 0.5).toFixed(2)}</span>
+                    `;
+                    div.onclick = () => this.removeBeard();
+                    container.appendChild(div);
+                }
+
+                // Eyebrows (men and women)
+                if (this.eyebrowsData && (this.eyebrowsData.t_max || this.eyebrowsData.t_min)) {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item' + (this.selectedCategory === 'eyebrows' ? ' active' : '');
+                    div.innerHTML = `
+                        <span class="menu-label">${this.categoryNames['eyebrows']}</span>
+                        <span class="menu-price">$${(this.prices.eyebrows || 12).toFixed(2)}</span>
+                    `;
+                    div.onclick = () => this.selectCategory('eyebrows');
+                    container.appendChild(div);
+                }
+
+                // Makeup (women only)
+                if (!this.isMale && this.makeupData) {
+                    const div = document.createElement('div');
+                    div.className = 'menu-item' + (this.selectedCategory === 'makeup' ? ' active' : '');
+                    div.innerHTML = `
+                        <span class="menu-label">Makeup</span>
+                        <span class="menu-price">$${(this.prices.makeup || 15).toFixed(2)}</span>
+                    `;
+                    div.onclick = () => this.selectCategory('makeup');
+                    container.appendChild(div);
+                }
+
+                const looks = document.createElement('div');
+                looks.className = 'menu-item' + (this.selectedCategory === 'looks' ? ' active' : '');
+                looks.innerHTML = `<span class="menu-label">Looks</span><span class="menu-price">${this.looks.length}</span>`;
+                looks.onclick = () => this.selectCategory('looks');
+                container.appendChild(looks);
+            },
+            
+            selectCategory: function(category) {
+                this.selectedCategory = category;
+                if (category === 'looks') {
+                    this.selectedHair = null;
+                    this.selectedBeard = null;
+                    this.selectedEyebrows = null;
+                    this.selectedMakeup = null;
+                    this.eyebrowsState = { ...this.originalEyebrowsState };
+                    this.makeupState = { ...this.originalMakeupState };
+                    this.updateTotal();
+                    this.renderCategories();
+                    this.renderLooksControls();
+                    document.getElementById('category-title').textContent = 'Looks';
+                    document.getElementById('right-panel').classList.add('visible');
+                    this.previewLook();
+                    return;
+                }
+                const selected = category === 'hair' ? this.selectedHair : this.selectedBeard;
+                const original = this.originalSelections[category] || {};
+                const initial = selected && !selected.remove ? selected : original;
+                this.selectedStyleIndex = Number(initial.styleIndex || 0);
+                this.selectedColorIndex = Number(initial.colorIndex || 0);
+                
+                this.renderCategories();
+                if (category === 'makeup') {
+                    this.renderMakeupControls();
+                } else if (category === 'eyebrows') {
+                    this.renderEyebrowsControls();
+                } else {
+                    this.renderStyleSlider();
+                    this.renderColorSlider();
+                }
+                
+                document.getElementById('category-title').textContent = this.categoryNames[category] || category;
+                document.getElementById('right-panel').classList.add('visible');
+                
+                if (category === 'makeup') {
+                    this.updateOverlayInfo('Makeup', false, this.prices.makeup || 15);
+                } else if (category === 'eyebrows') {
+                    this.updateOverlayInfo('Eyebrows', false, this.prices.eyebrows || 12);
+                } else {
+                    this.updateInfo(false);
+                }
+            },
+
+            objectsEqual: function(left, right) {
+                const keys = new Set([...Object.keys(left || {}), ...Object.keys(right || {})]);
+                for (const key of keys) {
+                    if (Number(left?.[key] ?? 0) !== Number(right?.[key] ?? 0)) return false;
+                }
+                return true;
+            },
+
+            renderLooksControls: function() {
+                const count = this.looks.length;
+                this.selectedLookIndex = Math.max(0, Math.min(this.selectedLookIndex, count));
+                const styleContainer = document.getElementById('style-controls');
+                document.getElementById('color-controls').innerHTML = '';
+                styleContainer.innerHTML = `<div class="control-group"><div class="control-label"><span class="name">Look</span><span class="value">${this.selectedLookIndex} / ${count}</span></div><div class="slider-row"><button class="slider-btn" onclick="App.prevLook()">◄</button><input type="range" id="look-slider" min="0" max="${count}" value="${this.selectedLookIndex}" oninput="App.setLookIndex(this.value)"><button class="slider-btn" onclick="App.nextLook()">►</button></div><div class="look-actions"><button class="btn btn-buy" onclick="App.saveLook()">Save</button><button class="btn btn-buy" ${this.selectedLookIndex === 0 ? 'disabled' : ''} onclick="App.applyLook()">Apply</button><button class="btn btn-back" ${this.selectedLookIndex === 0 ? 'disabled' : ''} onclick="App.deleteLook()">Delete</button></div></div>`;
+                document.getElementById('info-name').textContent = this.selectedLookIndex === 0 ? 'Current Style (Look 0)' : `Look ${this.selectedLookIndex}`;
+                document.getElementById('info-color').textContent = this.selectedLookIndex === 0 ? 'Currently Paid Style' : 'Saved Paid Style';
+                document.getElementById('info-price').textContent = '$0.00';
+            },
+
+            setLookIndex: function(value) {
+                this.selectedLookIndex = Number(value) || 0;
+                this.renderLooksControls();
+                this.previewLook();
+            },
+
+            prevLook: function() {
+                const count = this.looks.length;
+                this.selectedLookIndex = this.selectedLookIndex > 0 ? this.selectedLookIndex - 1 : count;
+                this.renderLooksControls();
+                this.previewLook();
+            },
+
+            nextLook: function() {
+                const count = this.looks.length;
+                this.selectedLookIndex = this.selectedLookIndex < count ? this.selectedLookIndex + 1 : 0;
+                this.renderLooksControls();
+                this.previewLook();
+            },
+
+            previewLook: function() {
+                fetch('https://rsg-barbershop/previewLook', {
+                    method: 'POST',
+                    body: JSON.stringify({ index: this.selectedLookIndex })
+                });
+            },
+
+            saveLook: function() {
+                fetch('https://rsg-barbershop/saveLook', { method: 'POST', body: '{}' });
+            },
+
+            deleteLook: function() {
+                if (this.selectedLookIndex === 0) return;
+                fetch('https://rsg-barbershop/deleteLook', {
+                    method: 'POST',
+                    body: JSON.stringify({ index: this.selectedLookIndex })
+                });
+            },
+
+            applyLook: function() {
+                if (this.selectedLookIndex === 0) return;
+                fetch('https://rsg-barbershop/applyLook', {
+                    method: 'POST',
+                    body: JSON.stringify({ index: this.selectedLookIndex })
+                });
+            },
+
+            selectionFromLook: function(category, component) {
+                const styles = this.hairsData[category] || [];
+                const hashname = component?.hashname;
+                for (let styleIndex = 0; styleIndex < styles.length; styleIndex++) {
+                    const colors = styles[styleIndex].colors || [];
+                    for (let colorIndex = 0; colorIndex < colors.length; colorIndex++) {
+                        if (hashname && colors[colorIndex].hashname === hashname) return { styleIndex, colorIndex, hashname, absent: false };
+                    }
+                }
+                const styleIndex = Math.max(0, styles.findIndex(style => Number(style.index) === Number(component?.model || 0)));
+                const colors = styles[styleIndex]?.colors || [];
+                const colorIndex = Math.max(0, Math.min(colors.length - 1, Number(component?.color || 1) - 1));
+                return { styleIndex, colorIndex, hashname: colors[colorIndex]?.hashname, absent: Number(component?.model || 0) === 0 };
+            },
+
+            setCurrentPaidStyle: function(style) {
+                if (!style) return;
+                this.currentBarberStyle = style;
+                this.originalSelections.hair = this.selectionFromLook('hair', style.hair);
+                if (this.isMale) this.originalSelections.beard = this.selectionFromLook('beard', style.beard);
+                this.originalEyebrowsState = { ...(style.eyebrows || {}) };
+                this.originalMakeupState = { ...(style.makeup || {}) };
+                this.eyebrowsState = { ...this.originalEyebrowsState };
+                this.makeupState = { ...this.originalMakeupState };
+                this.selectedHair = null;
+                this.selectedBeard = null;
+                this.selectedEyebrows = null;
+                this.selectedMakeup = null;
+                this.updateTotal();
+                if (['hair', 'beard', 'eyebrows', 'makeup'].includes(this.selectedCategory)) {
+                    this.selectCategory(this.selectedCategory);
+                }
+            },
+
+            updateOverlayInfo: function(label, changed, price) {
+                document.getElementById('info-name').textContent = label;
+                document.getElementById('info-color').textContent = changed ? 'Modified' : 'Current Look';
+                document.getElementById('info-price').textContent = '$' + (changed ? price : 0).toFixed(2);
+            },
+            
+            _eyebrowsDefaults: function() {
+                const d = this.currentEyebrows && typeof this.currentEyebrows === 'object' ? { ...this.currentEyebrows } : {};
+                const def = (key, val) => { if (d[key] === undefined) d[key] = val; };
+                def('eyebrows_t', 1); def('eyebrows_op', 100); def('eyebrows_id', 10); def('eyebrows_c1', 0);
+                return d;
+            },
+            renderEyebrowsControls: function() {
+                const container = document.getElementById('style-controls');
+                const colorContainer = document.getElementById('color-controls');
+                container.innerHTML = '';
+                colorContainer.innerHTML = '';
+                const ed = this.eyebrowsData || {};
+                const tMax = ed.t_max || 22;
+                const opMax = ed.op_max || 100;
+                const idMax = ed.id_max || 25;
+                const c1Max = ed.c1_max || 64;
+                const tVal = Math.min(Math.max(this.eyebrowsState.eyebrows_t ?? 1, 1), tMax);
+                const opVal = Math.min(Math.max(this.eyebrowsState.eyebrows_op ?? 100, 0), opMax);
+                const idVal = Math.min(Math.max(this.eyebrowsState.eyebrows_id ?? 10, 1), idMax);
+                const c1Val = Math.min(Math.max(this.eyebrowsState.eyebrows_c1 ?? 0, 0), c1Max);
+                const g = document.createElement('div');
+                g.className = 'control-group';
+                g.innerHTML = `
+                    <div class="control-label"><span class="name">Eyebrow Style</span></div>
+                    <div class="slider-row">
+                        <span style="font-size:11px;color:var(--gray-light);">Type</span>
+                        <button class="slider-btn" onclick="App.stepEyebrowControl('eyebrows_t', -1)">◄</button>
+                        <input type="range" data-eyebrows="eyebrows_t" min="1" max="${tMax}" value="${tVal}" oninput="App.onEyebrowsChange(this)">
+                        <button class="slider-btn" onclick="App.stepEyebrowControl('eyebrows_t', 1)">►</button>
+                    </div>
+                    <div class="slider-row">
+                        <span style="font-size:11px;color:var(--gray-light);">Brightness</span>
+                        <input type="range" data-eyebrows="eyebrows_op" min="0" max="${opMax}" value="${opVal}" oninput="App.onEyebrowsChange(this)">
+                    </div>
+                    <div class="control-label"><span class="name">Eyebrow Color</span></div>
+                    <div class="slider-row">
+                        <span style="font-size:11px;color:var(--gray-light);">Type / Palette</span>
+                        <button class="slider-btn" onclick="App.stepEyebrowControl('eyebrows_id', -1)">◄</button>
+                        <input type="range" data-eyebrows="eyebrows_id" min="1" max="${idMax}" value="${idVal}" oninput="App.onEyebrowsChange(this)">
+                        <button class="slider-btn" onclick="App.stepEyebrowControl('eyebrows_id', 1)">►</button>
+                    </div>
+                    <div class="slider-row">
+                        <span style="font-size:11px;color:var(--gray-light);">Shade</span>
+                        <input type="range" data-eyebrows="eyebrows_c1" min="0" max="${c1Max}" value="${c1Val}" oninput="App.onEyebrowsChange(this)">
+                    </div>
+                `;
+                container.appendChild(g);
+            },
+            stepEyebrowControl: function(key, direction) {
+                const input = document.querySelector(`input[data-eyebrows="${key}"]`);
+                if (!input) return;
+                const min = Number(input.min);
+                const max = Number(input.max);
+                let value = Number(input.value) + direction;
+                if (value < min) value = max;
+                if (value > max) value = min;
+                input.value = value;
+                this.onEyebrowsChange(input);
+            },
+            onEyebrowsChange: function(input) {
+                const k = input.dataset.eyebrows;
+                const v = parseInt(input.value, 10);
+                if (k && !isNaN(v)) {
+                    this.eyebrowsState[k] = v;
+                    this.applyEyebrows();
+                    this.selectedEyebrows = this.objectsEqual(this.eyebrowsState, this.originalEyebrowsState)
+                        ? null
+                        : { ...this.eyebrowsState };
+                    this.updateOverlayInfo('Eyebrows', Boolean(this.selectedEyebrows), this.prices.eyebrows || 12);
+                    this.updateTotal();
+                }
+            },
+            applyEyebrows: function() {
+                fetch('https://rsg-barbershop/previewEyebrows', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.eyebrowsState)
+                }).catch(() => {});
+            },
+            _makeupDefaults: function() {
+                const d = this.currentMakeup && typeof this.currentMakeup === 'object' ? { ...this.currentMakeup } : {};
+                const def = (key, val) => { if (d[key] === undefined) d[key] = val; };
+                def('shadows_t', 1); def('shadows_op', 0); def('shadows_id', 1); def('shadows_c1', 0);
+                def('blush_t', 1); def('blush_op', 0); def('blush_id', 1); def('blush_c1', 0);
+                def('lipsticks_t', 1); def('lipsticks_op', 0); def('lipsticks_id', 1); def('lipsticks_c1', 0); def('lipsticks_c2', 0);
+                def('eyeliners_t', 1); def('eyeliners_op', 0); def('eyeliners_id', 1); def('eyeliners_c1', 0);
+                return d;
+            },
+            renderMakeupControls: function() {
+                const container = document.getElementById('style-controls');
+                const colorContainer = document.getElementById('color-controls');
+                container.innerHTML = '';
+                colorContainer.innerHTML = '';
+                const md = this.makeupData || {};
+                const labels = { shadows: 'Eye Shadow', blush: 'Blush', lipsticks: 'Lipstick', eyeliners: 'Eyeliner' };
+                const keys = ['shadows', 'blush', 'lipsticks', 'eyeliners'];
+                keys.forEach(key => {
+                    const cfg = md[key];
+                    if (!cfg) return;
+                    const tMax = cfg.t_max || 5;
+                    const opMax = cfg.op_max || 100;
+                    const idMax = cfg.id_max || 25;
+                    const c1Max = cfg.c1_max || 64;
+                    const c2Max = cfg.c2_max || 64;
+                    const tVal = Math.min(Math.max(this.makeupState[key + '_t'] ?? 1, 1), tMax);
+                    const opVal = Math.min(Math.max(this.makeupState[key + '_op'] ?? 0, 0), opMax);
+                    const idVal = Math.min(Math.max(this.makeupState[key + '_id'] ?? 1, 1), idMax);
+                    const c1Val = Math.min(Math.max(this.makeupState[key + '_c1'] ?? 0, 0), c1Max);
+                    const c2Val = Math.min(Math.max(this.makeupState[key + '_c2'] ?? 0, 0), c2Max);
+                    let extraSliders = `
+                        <div class="slider-row">
+                            <span style="font-size:11px;color:var(--gray-light);">Color</span>
+                            <input type="range" data-makeup="${key}_id" min="1" max="${idMax}" value="${idVal}" oninput="App.onMakeupChange(this)">
+                        </div>
+                        <div class="slider-row">
+                            <span style="font-size:11px;color:var(--gray-light);">Shade</span>
+                            <input type="range" data-makeup="${key}_c1" min="0" max="${c1Max}" value="${c1Val}" oninput="App.onMakeupChange(this)">
+                        </div>
+                    `;
+                    if (key === 'lipsticks') {
+                        extraSliders += `
+                        <div class="slider-row">
+                            <span style="font-size:11px;color:var(--gray-light);">Shade 2</span>
+                            <input type="range" data-makeup="${key}_c2" min="0" max="${c2Max}" value="${c2Val}" oninput="App.onMakeupChange(this)">
+                        </div>
+                        `;
+                    }
+                    const g = document.createElement('div');
+                    g.className = 'control-group';
+                    g.innerHTML = `
+                        <div class="control-label">
+                            <span class="name">${labels[key] || key}</span>
+                        </div>
+                        <div class="slider-row">
+                            <span style="font-size:11px;color:var(--gray-light);">Style</span>
+                            <input type="range" data-makeup="${key}_t" min="1" max="${tMax}" value="${tVal}" oninput="App.onMakeupChange(this)">
+                        </div>
+                        <div class="slider-row">
+                            <span style="font-size:11px;color:var(--gray-light);">Opacity</span>
+                            <input type="range" data-makeup="${key}_op" min="0" max="${opMax}" value="${opVal}" oninput="App.onMakeupChange(this)">
+                        </div>
+                        ${extraSliders}
+                    `;
+                    container.appendChild(g);
+                });
+            },
+            onMakeupChange: function(input) {
+                const k = input.dataset.makeup;
+                const v = parseInt(input.value, 10);
+                if (k && !isNaN(v)) {
+                    this.makeupState[k] = v;
+                    this.applyMakeup();
+                    this.selectedMakeup = this.objectsEqual(this.makeupState, this.originalMakeupState)
+                        ? null
+                        : { ...this.makeupState };
+                    this.updateOverlayInfo('Makeup', Boolean(this.selectedMakeup), this.prices.makeup || 15);
+                    this.updateTotal();
+                }
+            },
+            applyMakeup: function() {
+                fetch('https://rsg-barbershop/previewMakeup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.makeupState)
+                }).catch(() => {});
+            },
+            renderStyleSlider: function() {
+                const container = document.getElementById('style-controls');
+                container.innerHTML = '';
+                
+                const styles = this.hairsData[this.selectedCategory] || [];
+                if (styles.length === 0) return;
+                
+                const group = document.createElement('div');
+                group.className = 'control-group';
+                group.innerHTML = `
+                    <div class="control-label">
+                        <span class="name">Style</span>
+                        <span class="value" id="style-counter">${this.selectedStyleIndex + 1} / ${styles.length}</span>
+                    </div>
+                    <div class="slider-row">
+                        <button class="slider-btn" onclick="App.prevStyle()">◄</button>
+                        <input type="range" id="style-slider" min="0" max="${styles.length - 1}" value="${this.selectedStyleIndex}" oninput="App.onStyleChange(this.value)">
+                        <button class="slider-btn" onclick="App.nextStyle()">►</button>
+                    </div>
+                `;
+                container.appendChild(group);
+            },
+            
+            renderColorSlider: function() {
+                const container = document.getElementById('color-controls');
+                container.innerHTML = '';
+                
+                const styles = this.hairsData[this.selectedCategory] || [];
+                if (styles.length === 0) return;
+                
+                const currentStyle = styles[this.selectedStyleIndex];
+                if (!currentStyle || !currentStyle.colors || currentStyle.colors.length === 0) return;
+                
+                const colors = currentStyle.colors;
+                
+                const group = document.createElement('div');
+                group.className = 'control-group';
+                group.innerHTML = `
+                    <div class="control-label">
+                        <span class="name">Color</span>
+                        <span class="value" id="color-counter">${this.selectedColorIndex + 1} / ${colors.length}</span>
+                    </div>
+                    <div class="slider-row">
+                        <button class="slider-btn" onclick="App.prevColor()">◄</button>
+                        <input type="range" id="color-slider" min="0" max="${colors.length - 1}" value="${this.selectedColorIndex}" oninput="App.onColorChange(this.value)">
+                        <button class="slider-btn" onclick="App.nextColor()">►</button>
+                    </div>
+                `;
+                container.appendChild(group);
+            },
+            
+            onStyleChange: function(value) {
+                this.selectedStyleIndex = parseInt(value);
+                const colors = this.hairsData[this.selectedCategory]?.[this.selectedStyleIndex]?.colors || [];
+                this.selectedColorIndex = Math.max(0, Math.min(this.selectedColorIndex, colors.length - 1));
+                this.renderColorSlider();
+                this.applyCurrentStyle();
+                this.updateInfo();
+            },
+            
+            onColorChange: function(value) {
+                this.selectedColorIndex = parseInt(value);
+                this.applyCurrentStyle();
+                this.updateInfo();
+            },
+            
+            prevStyle: function() {
+                const styles = this.hairsData[this.selectedCategory] || [];
+                if (styles.length === 0) return;
+                this.selectedStyleIndex = this.selectedStyleIndex > 0 ? this.selectedStyleIndex - 1 : styles.length - 1;
+                const colors = styles[this.selectedStyleIndex]?.colors || [];
+                this.selectedColorIndex = Math.max(0, Math.min(this.selectedColorIndex, colors.length - 1));
+                document.getElementById('style-slider').value = this.selectedStyleIndex;
+                this.renderColorSlider();
+                this.applyCurrentStyle();
+                this.updateInfo();
+            },
+            
+            nextStyle: function() {
+                const styles = this.hairsData[this.selectedCategory] || [];
+                if (styles.length === 0) return;
+                this.selectedStyleIndex = this.selectedStyleIndex < styles.length - 1 ? this.selectedStyleIndex + 1 : 0;
+                const colors = styles[this.selectedStyleIndex]?.colors || [];
+                this.selectedColorIndex = Math.max(0, Math.min(this.selectedColorIndex, colors.length - 1));
+                document.getElementById('style-slider').value = this.selectedStyleIndex;
+                this.renderColorSlider();
+                this.applyCurrentStyle();
+                this.updateInfo();
+            },
+            
+            prevColor: function() {
+                const styles = this.hairsData[this.selectedCategory] || [];
+                const currentStyle = styles[this.selectedStyleIndex];
+                if (!currentStyle || !currentStyle.colors) return;
+                const colors = currentStyle.colors;
+                this.selectedColorIndex = this.selectedColorIndex > 0 ? this.selectedColorIndex - 1 : colors.length - 1;
+                document.getElementById('color-slider').value = this.selectedColorIndex;
+                this.applyCurrentStyle();
+                this.updateInfo();
+            },
+            
+            nextColor: function() {
+                const styles = this.hairsData[this.selectedCategory] || [];
+                const currentStyle = styles[this.selectedStyleIndex];
+                if (!currentStyle || !currentStyle.colors) return;
+                const colors = currentStyle.colors;
+                this.selectedColorIndex = this.selectedColorIndex < colors.length - 1 ? this.selectedColorIndex + 1 : 0;
+                document.getElementById('color-slider').value = this.selectedColorIndex;
+                this.applyCurrentStyle();
+                this.updateInfo();
+            },
+            
+            updateInfo: function(markChanged = true) {
+                const styles = this.hairsData[this.selectedCategory] || [];
+                if (styles.length === 0) return;
+                
+                const currentStyle = styles[this.selectedStyleIndex];
+                if (!currentStyle) return;
+                
+                const currentColor = currentStyle.colors ? currentStyle.colors[this.selectedColorIndex] : null;
+                
+                document.getElementById('style-counter').textContent = `${this.selectedStyleIndex + 1} / ${styles.length}`;
+                
+                const colorSlider = document.getElementById('color-slider');
+                const colorCounter = document.getElementById('color-counter');
+                if (colorSlider && currentStyle.colors) {
+                    colorCounter.textContent = `${this.selectedColorIndex + 1} / ${currentStyle.colors.length}`;
+                }
+                
+                document.getElementById('info-name').textContent = currentStyle.name || ('Style ' + (this.selectedStyleIndex + 1));
+                document.getElementById('info-color').textContent = currentColor ? currentColor.name : '-';
+                
+                const original = this.originalSelections[this.selectedCategory] || {};
+                const differsFromOriginal = original.absent === true
+                    || this.selectedStyleIndex !== Number(original.styleIndex || 0)
+                    || this.selectedColorIndex !== Number(original.colorIndex || 0);
+                const existingSelection = this.selectedCategory === 'hair' ? this.selectedHair : this.selectedBeard;
+                const billable = markChanged ? differsFromOriginal : Boolean(existingSelection);
+                const price = billable
+                    ? (this.selectedCategory === 'hair' ? this.prices.hair : this.prices.beard)
+                    : 0;
+                document.getElementById('info-price').textContent = '$' + price.toFixed(2);
+                
+                // Mark selected
+                if (markChanged && this.selectedCategory === 'hair') {
+                    this.selectedHair = differsFromOriginal ? {
+                        styleIndex: this.selectedStyleIndex,
+                        colorIndex: this.selectedColorIndex,
+                        hashname: currentColor ? currentColor.hashname : null,
+                        name: currentStyle.name,
+                        colorName: currentColor ? currentColor.name : null
+                    } : null;
+                } else if (markChanged && this.selectedCategory === 'beard') {
+                    this.selectedBeard = differsFromOriginal ? {
+                        styleIndex: this.selectedStyleIndex,
+                        colorIndex: this.selectedColorIndex,
+                        hashname: currentColor ? currentColor.hashname : null,
+                        name: currentStyle.name,
+                        colorName: currentColor ? currentColor.name : null
+                    } : null;
+                }
+                
+                this.updateTotal();
+            },
+            
+            applyCurrentStyle: function() {
+                const styles = this.hairsData[this.selectedCategory] || [];
+                if (styles.length === 0) return;
+                
+                const currentStyle = styles[this.selectedStyleIndex];
+                if (!currentStyle || !currentStyle.colors) return;
+                
+                const currentColor = currentStyle.colors[this.selectedColorIndex];
+                if (!currentColor || !currentColor.hashname) return;
+                
+                const callback = this.selectedCategory === 'hair' ? 'previewHair' : 'previewBeard';
+                
+                fetch(`https://rsg-barbershop/${callback}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ hashname: currentColor.hashname })
+                });
+                
+                this.updateInfo();
+            },
+            
+            removeHair: function() {
+                this.selectedHair = this.originalSelections.hair?.absent ? null : { remove: true };
+                fetch('https://rsg-barbershop/previewHair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ remove: true })
+                }).catch(() => {});
+                this.renderCategories();
+                this.updateTotal();
+            },
+            removeBeard: function() {
+                this.selectedBeard = this.originalSelections.beard?.absent ? null : { remove: true };
+                fetch('https://rsg-barbershop/previewBeard', {
+                    method: 'POST',
+                    body: JSON.stringify({ remove: true })
+                });
+                this.showNotification('Beard shaved', 'success');
+                this.updateTotal();
+            },
+            
+            updateTotal: function() {
+                let total = 0;
+                
+                const hairRow = document.getElementById('total-hair');
+                const beardRow = document.getElementById('total-beard');
+                const eyebrowsRow = document.getElementById('total-eyebrows');
+                const makeupRow = document.getElementById('total-makeup');
+                
+                if (this.selectedHair) {
+                    hairRow.style.display = 'flex';
+                    const hairPrice = this.selectedHair.remove
+                        ? (this.prices.hairShave || this.prices.hair * 0.5)
+                        : this.prices.hair;
+                    document.getElementById('price-hair').textContent = '$' + hairPrice.toFixed(2);
+                    total += hairPrice;
+                } else {
+                    hairRow.style.display = 'none';
+                }
+                
+                if (this.selectedBeard) {
+                    beardRow.style.display = 'flex';
+                    const beardPrice = this.selectedBeard.remove ? (this.prices.beard * 0.5) : this.prices.beard;
+                    document.getElementById('price-beard').textContent = '$' + beardPrice.toFixed(2);
+                    total += beardPrice;
+                } else {
+                    beardRow.style.display = 'none';
+                }
+                
+                if (this.selectedEyebrows) {
+                    eyebrowsRow.style.display = 'flex';
+                    const eyebrowsPrice = this.prices.eyebrows || 12;
+                    document.getElementById('price-eyebrows').textContent = '$' + eyebrowsPrice.toFixed(2);
+                    total += eyebrowsPrice;
+                } else {
+                    eyebrowsRow.style.display = 'none';
+                }
+                
+                if (this.selectedMakeup) {
+                    makeupRow.style.display = 'flex';
+                    const makeupPrice = this.prices.makeup || 15;
+                    document.getElementById('price-makeup').textContent = '$' + makeupPrice.toFixed(2);
+                    total += makeupPrice;
+                } else {
+                    makeupRow.style.display = 'none';
+                }
+                
+                document.getElementById('total-price').textContent = '$' + total.toFixed(2);
+                
+                // Enable/disable buy button
+                const buyBtn = document.getElementById('btn-buy');
+                buyBtn.disabled = total === 0 || total > this.playerMoney;
+            },
+            
+            buyStyle: function() {
+                const hairPrice = this.selectedHair
+                    ? (this.selectedHair.remove ? (this.prices.hairShave || this.prices.hair * 0.5) : this.prices.hair)
+                    : 0;
+                const beardPrice = this.selectedBeard ? (this.selectedBeard.remove ? this.prices.beard * 0.5 : this.prices.beard) : 0;
+                const eyebrowsPrice = this.selectedEyebrows ? (this.prices.eyebrows || 12) : 0;
+                const makeupPrice = this.selectedMakeup ? (this.prices.makeup || 15) : 0;
+                const total = hairPrice + beardPrice + eyebrowsPrice + makeupPrice;
+                
+                if (total === 0) {
+                    this.showNotification('Select a service first', 'error');
+                    return;
+                }
+                
+                if (this.playerMoney < total) {
+                    this.showNotification('Not enough money', 'error');
+                    return;
+                }
+                
+                fetch('https://rsg-barbershop/buyStyle', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        hair: this.selectedHair,
+                        beard: this.selectedBeard,
+                        eyebrows: this.selectedEyebrows,
+                        makeup: this.selectedMakeup
+                    })
+                });
+            },
+            
+            purchaseSuccess: function(data) {
+                this.playerMoney = data.newMoney || this.playerMoney;
+                document.getElementById('player-cash').textContent = this.playerMoney.toFixed(2);
+                this.showNotification('Paid!', 'success');
+                this.setCurrentPaidStyle(data.barberStyle);
+                
+                // Reset selection
+                this.selectedHair = null;
+                this.selectedBeard = null;
+                this.selectedEyebrows = null;
+                this.selectedMakeup = null;
+                this.updateTotal();
+            },
+            
+            purchaseFailed: function(reason) {
+                this.showNotification(reason || 'Payment error', 'error');
+            },
+            
+            showNotification: function(text, type) {
+                const notif = document.getElementById('notification');
+                notif.className = 'notification visible ' + (type || '');
+                document.getElementById('notification-text').textContent = text;
+                setTimeout(() => notif.classList.remove('visible'), 2000);
+            },
+            
+            moveCamera: function(direction) {
+                fetch('https://rsg-barbershop/moveCamera', {
+                    method: 'POST',
+                    body: JSON.stringify({ direction: direction })
+                });
+            },
+            
+            closeShop: function(purchased) {
+                this.isOpen = false;
+                document.getElementById('app').classList.remove('visible');
+                document.getElementById('ui-scale-control').classList.remove('visible');
+                fetch('https://rsg-barbershop/closeShop', {
+                    method: 'POST',
+                    body: JSON.stringify({ purchased: purchased || false })
+                });
+            }
+        };
+        
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            switch (data.action) {
+                case 'open': App.init(data); break;
+                case 'close': App.closeShop(false); break;
+                case 'updateMoney':
+                    App.playerMoney = data.money;
+                    document.getElementById('player-cash').textContent = data.money.toFixed(2);
+                    break;
+                case 'purchaseSuccess': App.purchaseSuccess(data); break;
+                case 'purchaseFailed': App.purchaseFailed(data.reason); break;
+                case 'looksUpdated':
+                    App.looks = Array.isArray(data.looks) ? data.looks : [];
+                    App.selectedLookIndex = Number(data.selectedIndex || 0);
+                    App.renderCategories();
+                    if (App.selectedCategory === 'looks') { App.renderLooksControls(); App.previewLook(); }
+                    App.showNotification('Looks updated', 'success');
+                    break;
+                case 'lookApplied':
+                    App.setCurrentPaidStyle(data.style);
+                    App.renderLooksControls();
+                    App.showNotification('Look applied', 'success');
+                    break;
+            }
+        });
+        
+        document.addEventListener('keydown', function(event) {
+            if (!App.isOpen) return;
+            if (App.selectedCategory === 'looks') {
+                switch (event.key) {
+                    case 'ArrowLeft': event.preventDefault(); App.prevLook(); return;
+                    case 'ArrowRight': event.preventDefault(); App.nextLook(); return;
+                    case 'e': case 'E': case 'Enter': event.preventDefault(); App.applyLook(); return;
+                }
+            }
+            if (App.selectedCategory === 'eyebrows') {
+                switch (event.key) {
+                    case 'ArrowLeft': event.preventDefault(); App.stepEyebrowControl('eyebrows_t', -1); return;
+                    case 'ArrowRight': event.preventDefault(); App.stepEyebrowControl('eyebrows_t', 1); return;
+                    case 'ArrowUp': event.preventDefault(); App.stepEyebrowControl('eyebrows_id', -1); return;
+                    case 'ArrowDown': event.preventDefault(); App.stepEyebrowControl('eyebrows_id', 1); return;
+                }
+            }
+            switch (event.key) {
+                case 'ArrowLeft': event.preventDefault(); App.prevStyle(); break;
+                case 'ArrowRight': event.preventDefault(); App.nextStyle(); break;
+                case 'ArrowUp': event.preventDefault(); App.prevColor(); break;
+                case 'ArrowDown': event.preventDefault(); App.nextColor(); break;
+                case 'e': case 'E': case 'Enter': event.preventDefault(); App.buyStyle(); break;
+                case 'Escape': case 'Backspace': event.preventDefault(); App.closeShop(false); break;
+            }
+        });
+    </script>
+</body>
+</html>

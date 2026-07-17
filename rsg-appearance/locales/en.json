@@ -1,0 +1,35 @@
+{
+"camera_prompt_text": "Kamera",
+"rotate_prompt_text": "Drej",
+"zoom_prompt_text": "Zoom",
+"group_prompt_text": "Gruppe",
+"texts": {
+"body": "Krop",
+"face": "Ansigt",
+"hair_beard": "Hår & Skæg",
+"hair_style": "Frisure",
+"hair_color": "Hårfarve",
+"skin_tone": "Hudtone",
+"appearance": "Udseende",
+"save": "Gem",
+"creator": "Skaber",
+"options": "Indstillinger"
+},
+"labels": {
+"hats": "Hat",
+"shirts_full": "Skjorte",
+"vests": "Vest",
+"pants": "Bukser",
+"boots": "Støvler",
+"coats": "Frakke",
+"coats_closed": "Frakke (lukket)"
+},
+"prompts": {
+"cloakroom_text": "Garderobe",
+"clothing_store_label": "Tøjbiks"
+},
+"blips": {
+"clothing_store": "Tøjbiks",
+"wardrobe": "Garderobe"
+}
+}

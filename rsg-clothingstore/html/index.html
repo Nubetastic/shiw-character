@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clothing Store</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --red: #8B0000;
+            --red-light: #A52A2A;
+            --red-dark: #5C0000;
+            --black: #0a0a0a;
+            --black-light: #1a1a1a;
+            --gray-dark: #2a2a2a;
+            --gray: #5a5044;
+            --gray-light: #7a6e5d;
+            --white: #e0d7c6;
+            --white-dim: #b8a88a;
+            --green: #2a6a2a;
+            --gold: #c9a227;
+        }
+
+        body {
+            font-family: 'Philosopher', 'Times New Roman', Times, serif;
+            background: transparent;
+            color: var(--white);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            transform-origin: top left;
+        }
+        
+        #app.visible { display: block; }
+
+        /* LEFT PANEL */
+        .left-panel {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 380px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 120%;
+            background: linear-gradient(90deg, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.95) 80%, rgba(10,10,10,0) 100%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .panel-title {
+            padding: 40px 30px 22px;
+            border-bottom: 1px solid var(--gray-dark);
+        }
+
+        .panel-title h1 {
+            font-size: 35px;
+            font-weight: 700;
+            color: var(--white);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .panel-title .subtitle {
+            font-size: 20px;
+            color: var(--gray-light);
+            letter-spacing: 2px;
+        }
+
+        .player-money {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 25px;
+            color: var(--green);
+        }
+
+        .red-line {
+            height: 2px;
+            background: linear-gradient(90deg, var(--red) 0%, var(--red-dark) 70%, transparent 100%);
+        }
+
+        .menu-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .menu-content::-webkit-scrollbar { width: 6px; }
+        .menu-content::-webkit-scrollbar-track { background: var(--black); }
+        .menu-content::-webkit-scrollbar-thumb { background: var(--gray-light); }
+
+        .menu-section-title {
+            font-size: 16px;
+            color: var(--gray-light);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 16px 30px 10px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .menu-item:hover { background: rgba(139, 0, 0, 0.15); }
+        .menu-item.active { background: rgba(139, 0, 0, 0.25); }
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--red);
+        }
+
+        .menu-label {
+            flex: 1;
+            font-size: 23px;
+            letter-spacing: 1px;
+        }
+
+        .menu-count {
+            font-size: 18px;
+            color: var(--gray-light);
+            background: var(--gray-dark);
+            padding: 2px 8px;
+            border-radius: 0;
+        }
+
+        .panel-footer {
+            padding: 18px 30px;
+            border-top: 1px solid var(--gray-dark);
+        }
+
+        .purchase-total {
+            margin-bottom: 10px;
+            text-align: right;
+            color: var(--gold);
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+
+        .footer-btns { display: flex; gap: 10px; }
+
+        .btn {
+            flex: 1;
+            padding: 12px 15px;
+            font-family: inherit;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back { background: var(--gray-dark); color: var(--white); }
+        .btn-back:hover { background: var(--gray); }
+        .btn-buy { background: var(--green); color: var(--white); }
+        .btn-buy:hover { background: #5a9c2a; }
+        .btn:disabled { opacity: 0.45; cursor: default; }
+        .btn:disabled:hover { background: var(--green); }
+        .outfit-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 440px;
+            height: 100%;
+            background: linear-gradient(270deg, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.95) 80%, rgba(10,10,10,0) 100%);
+            display: none;
+            flex-direction: column;
+        }
+
+        .right-panel.visible { display: flex; }
+
+        .settings-header {
+            padding: 40px 30px 22px;
+            border-bottom: 1px solid var(--gray-dark);
+        }
+
+        .settings-header h2 {
+            font-size: 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .settings-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 30px;
+        }
+
+        .settings-content::-webkit-scrollbar { width: 6px; }
+        .settings-content::-webkit-scrollbar-track { background: var(--black); }
+        .settings-content::-webkit-scrollbar-thumb { background: var(--gray-light); }
+
+        .control-group { margin-bottom: 25px; }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label .name { font-size: 21px; color: var(--white-dim); }
+        .control-label .value { font-size: 21px; color: var(--red); font-weight: 600; }
+
+        .slider-row { display: flex; align-items: center; gap: 14px; }
+
+        .slider-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--gray-dark);
+            border: none;
+            color: var(--white);
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-btn:hover { background: var(--red); }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            background: var(--gray-dark);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--red);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .item-info-box {
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid var(--gray-dark);
+            padding: 18px;
+            margin-top: 20px;
+        }
+
+        .item-name { font-size: 25px; color: var(--white); margin-bottom: 8px; }
+        .item-price { font-size: 30px; color: var(--green); font-weight: 700; }
+        .item-price.expensive { color: var(--red); }
+
+        /* BOTTOM PANEL */
+        .bottom-panel {
+            position: absolute;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .selected-item-display {
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid var(--gray-dark);
+            padding: 12px 30px;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .selected-item-name { font-size: 23px; color: var(--white); margin-bottom: 5px; }
+        .selected-item-price { font-size: 28px; color: var(--green); font-weight: 700; }
+
+        .camera-controls { display: flex; gap: 8px; }
+
+        .camera-btn {
+            width: 45px;
+            height: 45px;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid var(--gray-dark);
+            color: var(--white);
+            font-size: 23px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-btn:hover {
+            background: rgba(139, 0, 0, 0.5);
+            border-color: var(--red);
+        }
+
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 10, 0.95);
+            border: 2px solid var(--red);
+            padding: 30px 50px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .notification.visible { display: block; animation: fadeIn 0.3s ease; }
+        .notification.success { border-color: var(--green); }
+        .notification.error { border-color: var(--red); }
+        .notification-text { font-size: 25px; color: var(--white); }
+
+        .ui-scale-control {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 2000;
+            width: 336px;
+            display: none;
+            padding: 14.4px 19.2px;
+            background: rgba(10, 10, 10, 0.94);
+            border: 1px solid var(--gray-dark);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+        }
+
+        .ui-scale-control.visible { display: block; }
+        .ui-scale-header { display: flex; justify-content: space-between; margin-bottom: 9.6px; }
+        .ui-scale-label { color: var(--white-dim); font-size: 18px; letter-spacing: 1.2px; text-transform: uppercase; }
+        .ui-scale-value { color: var(--white); font-size: 19.2px; font-weight: 700; }
+        .ui-scale-control input { width: 100%; accent-color: var(--red-light); cursor: pointer; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="left-panel">
+            <div class="panel-title">
+                <h1 id="store-name">Clothing Store</h1>
+                <div class="subtitle">PRODUCT CATALOG</div>
+                <div class="player-money">
+                    <span>$</span>
+                    <span id="player-cash">0.00</span>
+                </div>
+            </div>
+            <div class="red-line"></div>
+            
+            <div class="menu-content">
+                <div class="menu-section-title">Categories</div>
+                <div id="categories-list"></div>
+            </div>
+            
+            <div class="panel-footer">
+                <div class="purchase-total" id="purchase-total">Total: $0.00</div>
+                <div class="footer-btns">
+                    <button class="btn btn-back" onclick="App.closeStore()">Exit</button>
+                    <button class="btn btn-buy" id="primary-button" onclick="App.commitSelection()" disabled>Buy</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel" id="right-panel">
+            <div class="settings-header">
+                <h2 id="category-title">Items</h2>
+            </div>
+            <div class="red-line"></div>
+            
+            <div class="settings-content">
+                <div id="items-controls"></div>
+                <div class="item-info-box" id="item-info">
+                    <div class="item-name" id="info-name">Select an item</div>
+                    <div class="item-price" id="info-price">$0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-panel">
+            <div class="selected-item-display" id="selected-display">
+                <div class="selected-item-name" id="display-name">Nothing selected</div>
+                <div class="selected-item-price" id="display-price"></div>
+            </div>
+            
+            <div class="camera-controls">
+                <button class="camera-btn" onclick="App.moveCamera('up')">▲</button>
+                <button class="camera-btn" onclick="App.moveCamera('down')">▼</button>
+                <button class="camera-btn" onclick="App.moveCamera('left')">◄</button>
+                <button class="camera-btn" onclick="App.moveCamera('right')">►</button>
+                <button class="camera-btn" onclick="App.moveCamera('reset')">⊙</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui-scale-control" id="ui-scale-control">
+        <div class="ui-scale-header">
+            <span class="ui-scale-label">Interface Scale</span>
+            <span class="ui-scale-value" id="ui-scale-value">1.00x</span>
+        </div>
+        <input id="ui-scale-slider" type="range" min="0.25" max="3" step="0.05" value="1"
+            oninput="App.previewScale(this.value)" onchange="App.saveScale(this.value)">
+    </div>
+
+    <div class="notification" id="notification">
+        <div class="notification-text" id="notification-text"></div>
+    </div>
+
+    <script>
+        const BASE_UI_SCALE = 1.4;
+
+        const App = {
+            isOpen: false,
+            mode: 'shop',
+            categories: {},
+            items: [],
+            outfits: [],
+            selectedCategory: null,
+            selectedItemIndex: 0,
+            categoryIndexes: {},
+            equippedKeys: {},
+            selectedOutfitIndex: 0,
+            currentItem: null,
+            playerMoney: 0,
+            cartTotal: 0,
+            canCommit: false,
+            uiScale: 1,
+            scaleModifier: 0,
+
+            categoryNames: {
+                hats: 'Hats', coats: 'Coats & Jackets', coats_closed: 'Closed Coats', vests: 'Vests',
+                shirts: 'Shirts', shirts_full: 'Shirts', badges: 'Badges', pants: 'Pants', boots: 'Boots', chaps: 'Chaps', gloves: 'Gloves',
+                neckwear: 'Neckwear', suspenders: 'Suspenders', belts: 'Belts', beltbuckle: 'Belt Buckle',
+                gunbelts: 'Gun Belts', holsters_left: 'Holster (Left)', holsters_right: 'Holster (Right)',
+                accessories: 'Accessories', masks: 'Masks', eyewear: 'Eyewear', cloaks: 'Cloaks',
+                ponchos: 'Ponchos', skirts: 'Skirts', spurs: 'Spurs', gauntlets: 'Gauntlets',
+                neckties: 'Neckties', dresses: 'Dresses', hair_accessories: 'Hair Accessories',
+                boot_accessories: 'Boot Accessories', earrings: 'Earrings', corsets: 'Corsets',
+                rings_rh: 'Rings (Right Hand)', rings_lh: 'Rings (Left Hand)', bracelets: 'Bracelets',
+                necklaces: 'Necklaces', jewelry_rings_right: 'Rings (Right Hand)',
+                jewelry_rings_left: 'Rings (Left Hand)', jewelry_bracelets: 'Bracelets', __outfits: 'Outfits'
+            },
+
+            // Display clothing categories from the character's head down to their feet.
+            categoryOrder: [
+                'hats', 'hair_accessories', 'masks', 'eyewear', 'earrings',
+                'neckwear', 'neckties', 'necklaces', 'accessories', 'badges',
+                'cloaks', 'ponchos', 'coats', 'coats_closed',
+                'vests', 'shirts', 'shirts_full', 'corsets', 'dresses', 'suspenders',
+                'gauntlets', 'gloves', 'bracelets', 'jewelry_bracelets',
+                'rings_lh', 'jewelry_rings_left', 'rings_rh', 'jewelry_rings_right',
+                'belts', 'beltbuckle', 'gunbelts', 'holsters_left', 'holsters_right',
+                'pants', 'skirts', 'chaps',
+                'boots', 'boot_accessories', 'spurs'
+            ],
+
+            post: function(name, data) {
+                return fetch(`https://rsg-clothingstore/${name}`, { method: 'POST', body: JSON.stringify(data || {}) });
+            },
+
+            setScale: function(scale, modifier) {
+                const parsedScale = Number(scale);
+                this.uiScale = Number.isFinite(parsedScale) ? Math.max(0.25, Math.min(3, parsedScale)) : 1;
+                if (modifier !== undefined) this.scaleModifier = Number(modifier) || 0;
+                const effectiveScale = BASE_UI_SCALE * Math.max(0.25, Math.min(3, this.uiScale + this.scaleModifier));
+                const app = document.getElementById('app');
+                app.style.transform = `scale(${effectiveScale})`;
+                app.style.width = `${100 / effectiveScale}%`;
+                app.style.height = `${100 / effectiveScale}%`;
+                document.getElementById('ui-scale-slider').value = this.uiScale;
+                document.getElementById('ui-scale-value').textContent = `${this.uiScale.toFixed(2)}x`;
+            },
+
+            previewScale: function(scale) {
+                this.setScale(scale);
+            },
+
+            saveScale: function(scale) {
+                this.setScale(scale);
+                this.post('setUiScale', { scale: this.uiScale });
+            },
+
+            init: function(data) {
+                this.setScale(data.scale === undefined ? this.uiScale : data.scale, data.scaleModifier);
+                this.isOpen = true;
+                this.mode = data.mode || 'shop';
+                this.items = Array.isArray(data.items) ? data.items : [];
+                this.outfits = Array.isArray(data.outfits) ? data.outfits : [];
+                this.playerMoney = Number(data.money || 0);
+                this.cartTotal = Number(data.total || 0);
+                this.canCommit = false;
+                this.selectedCategory = null;
+                this.selectedItemIndex = 0;
+                this.categoryIndexes = {};
+                this.equippedKeys = data.equippedKeys || {};
+                this.selectedOutfitIndex = 0;
+                this.currentItem = null;
+                document.getElementById('store-name').textContent = data.storeName || 'Clothing Store';
+                document.getElementById('player-cash').textContent = this.playerMoney.toFixed(2);
+                this.buildCategories();
+                this.renderCategories();
+                this.updateCommitUI();
+                document.getElementById('app').classList.add('visible');
+                document.getElementById('ui-scale-control').classList.add('visible');
+                document.getElementById('right-panel').classList.remove('visible');
+            },
+
+            buildCategories: function() {
+                const excluded = ['belt_buckles', 'talisman_belt', 'talisman_holster', 'loadouts', 'satchels', 'talisman_wrist', 'earrings'];
+                this.categories = {};
+                for (const item of this.items) {
+                    const cat = item.category || 'other';
+                    if (excluded.includes(cat)) continue;
+                    if (!this.categories[cat]) this.categories[cat] = [];
+                    this.categories[cat].push(item);
+                }
+                for (const cat of Object.keys(this.categories)) {
+                    this.categories[cat].sort((a, b) => {
+                        if (a._remove || a.remove) return -1;
+                        if (b._remove || b.remove) return 1;
+                        return Number(a.price || 0) - Number(b.price || 0);
+                    });
+                }
+                this.categories.__outfits = [];
+            },
+
+            renderCategories: function() {
+                const container = document.getElementById('categories-list');
+                container.innerHTML = '';
+                const sorted = this.getSortedCategories();
+                for (const cat of sorted) {
+                    const count = cat === '__outfits' ? this.outfits.length : Math.max(0, this.categories[cat].length - 1);
+                    const div = document.createElement('div');
+                    div.className = 'menu-item' + (this.selectedCategory === cat ? ' active' : '');
+                    div.innerHTML = `<span class="menu-label">${this.categoryNames[cat] || cat}</span><span class="menu-count">${count}</span>`;
+                    div.onclick = () => this.selectCategory(cat);
+                    container.appendChild(div);
+                }
+            },
+
+            getSortedCategories: function() {
+                const ranks = new Map(this.categoryOrder.map((category, index) => [category, index]));
+                return Object.keys(this.categories).sort((a, b) => {
+                    if (a === b) return 0;
+                    if (a === '__outfits') return 1;
+                    if (b === '__outfits') return -1;
+
+                    const aRank = ranks.has(a) ? ranks.get(a) : this.categoryOrder.length;
+                    const bRank = ranks.has(b) ? ranks.get(b) : this.categoryOrder.length;
+                    if (aRank !== bRank) return aRank - bRank;
+
+                    return (this.categoryNames[a] || a).localeCompare(this.categoryNames[b] || b, 'en');
+                });
+            },
+
+            changeCategory: function(direction) {
+                const categories = this.getSortedCategories();
+                if (!categories.length) return;
+                const currentIndex = categories.indexOf(this.selectedCategory);
+                const nextIndex = currentIndex === -1
+                    ? (direction > 0 ? 0 : categories.length - 1)
+                    : (currentIndex + direction + categories.length) % categories.length;
+                this.selectCategory(categories[nextIndex]);
+                const activeCategory = document.querySelector('#categories-list .menu-item.active');
+                if (activeCategory) activeCategory.scrollIntoView({ block: 'nearest' });
+            },
+
+            selectCategory: function(category) {
+                const reselectingOutfits = category === '__outfits' && this.selectedCategory === '__outfits';
+                this.selectedCategory = category;
+                let defaultIndex = 0;
+                if (category !== '__outfits') {
+                    const equippedKey = this.equippedKeys[category];
+                    const equippedIndex = equippedKey
+                        ? (this.categories[category] || []).findIndex(item => String(item.key).toLowerCase() === String(equippedKey).toLowerCase())
+                        : -1;
+                    if (equippedIndex >= 0) defaultIndex = equippedIndex;
+                }
+                this.selectedItemIndex = this.categoryIndexes[category] === undefined ? defaultIndex : Number(this.categoryIndexes[category]);
+                this.renderCategories();
+                document.getElementById('category-title').textContent = this.categoryNames[category] || category;
+                document.getElementById('right-panel').classList.add('visible');
+                if (category === '__outfits') {
+                    if (!reselectingOutfits) this.selectedOutfitIndex = 0;
+                    this.renderOutfitControls();
+                    if (!reselectingOutfits) {
+                        this.setCommitState(false, 'Apply', 0);
+                        this.previewCurrentOutfit(true);
+                    }
+                } else {
+                    this.renderItemsSlider();
+                    this.applyCurrentItem();
+                }
+            },
+
+            renderItemsSlider: function() {
+                const container = document.getElementById('items-controls');
+                container.innerHTML = '';
+                const items = this.categories[this.selectedCategory] || [];
+                if (!items.length) return;
+                container.innerHTML = `<div class="control-group"><div class="control-label"><span class="name">Variant</span><span class="value" id="item-counter">1 / ${items.length}</span></div><div class="slider-row"><button class="slider-btn" onclick="App.prevItem()">◄</button><input type="range" id="item-slider" min="0" max="${items.length - 1}" value="0" oninput="App.onSliderChange(this.value)"><button class="slider-btn" onclick="App.nextItem()">►</button></div></div>`;
+                const slider = document.getElementById('item-slider');
+                if (slider) slider.value = this.selectedItemIndex;
+                this.updateItemInfo();
+            },
+
+            renderOutfitControls: function() {
+                const count = this.outfits.length;
+                this.selectedOutfitIndex = Math.max(0, Math.min(this.selectedOutfitIndex, count));
+                const container = document.getElementById('items-controls');
+                container.innerHTML = `<div class="control-group"><div class="control-label"><span class="name">Outfit</span><span class="value" id="item-counter">${count ? this.selectedOutfitIndex + 1 : 0} / ${count}</span></div><div class="slider-row"><button class="slider-btn" ${count ? '' : 'disabled'} onclick="App.prevItem()">◄</button><input type="range" id="item-slider" min="0" max="${Math.max(0, count - 1)}" value="${this.selectedOutfitIndex}" ${count ? '' : 'disabled'} oninput="App.onSliderChange(this.value)"><button class="slider-btn" ${count ? '' : 'disabled'} onclick="App.nextItem()">►</button></div><div class="outfit-actions"><button class="btn btn-buy" onclick="App.saveOutfit()">Save</button><button class="btn btn-back" ${count ? '' : 'disabled'} onclick="App.deleteOutfit()">Delete</button></div></div>`;
+                const outfitSlider = document.getElementById('item-slider');
+                outfitSlider.max = count;
+                outfitSlider.value = this.selectedOutfitIndex;
+                outfitSlider.disabled = count === 0;
+                container.querySelectorAll('.slider-btn').forEach(button => { button.disabled = count === 0; });
+                container.querySelector('.outfit-actions .btn-back').disabled = this.selectedOutfitIndex === 0;
+                document.getElementById('item-counter').textContent = `${this.selectedOutfitIndex} / ${count}`;
+                document.getElementById('info-name').textContent = this.selectedOutfitIndex === 0 ? 'Current clothes (Outfit 0)' : `Outfit ${this.selectedOutfitIndex}`;
+                document.getElementById('info-price').textContent = '';
+                document.getElementById('display-name').textContent = this.selectedOutfitIndex === 0 ? 'Current clothes (Outfit 0)' : `Outfit ${this.selectedOutfitIndex}`;
+                document.getElementById('display-price').textContent = '';
+            },
+
+            currentListLength: function() {
+                return this.selectedCategory === '__outfits' ? this.outfits.length + 1 : (this.categories[this.selectedCategory] || []).length;
+            },
+
+            onSliderChange: function(value) {
+                if (this.selectedCategory === '__outfits') this.selectedOutfitIndex = Number(value);
+                else {
+                    this.selectedItemIndex = Number(value);
+                    this.categoryIndexes[this.selectedCategory] = this.selectedItemIndex;
+                }
+                this.applyCurrentItem();
+                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else this.updateItemInfo();
+            },
+
+            prevItem: function() {
+                const length = this.currentListLength();
+                if (!length) return;
+                if (this.selectedCategory === '__outfits') this.selectedOutfitIndex = this.selectedOutfitIndex > 0 ? this.selectedOutfitIndex - 1 : length - 1;
+                else {
+                    this.selectedItemIndex = this.selectedItemIndex > 0 ? this.selectedItemIndex - 1 : length - 1;
+                    this.categoryIndexes[this.selectedCategory] = this.selectedItemIndex;
+                }
+                this.applyCurrentItem();
+                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else { document.getElementById('item-slider').value = this.selectedItemIndex; this.updateItemInfo(); }
+            },
+
+            nextItem: function() {
+                const length = this.currentListLength();
+                if (!length) return;
+                if (this.selectedCategory === '__outfits') this.selectedOutfitIndex = this.selectedOutfitIndex < length - 1 ? this.selectedOutfitIndex + 1 : 0;
+                else {
+                    this.selectedItemIndex = this.selectedItemIndex < length - 1 ? this.selectedItemIndex + 1 : 0;
+                    this.categoryIndexes[this.selectedCategory] = this.selectedItemIndex;
+                }
+                this.applyCurrentItem();
+                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else { document.getElementById('item-slider').value = this.selectedItemIndex; this.updateItemInfo(); }
+            },
+
+            updateItemInfo: function() {
+                const items = this.categories[this.selectedCategory] || [];
+                if (!items.length) return;
+                const item = items[this.selectedItemIndex];
+                this.currentItem = item;
+                const price = Number(item.price || 0);
+                document.getElementById('item-counter').textContent = `${this.selectedItemIndex} / ${Math.max(0, items.length - 1)}`;
+                document.getElementById('info-name').textContent = item.name || this.selectedCategory;
+                document.getElementById('info-price').textContent = (item._remove || item.remove) ? '' : (item.owned ? 'Owned' : '$' + price.toFixed(2));
+                document.getElementById('info-price').classList.toggle('expensive', !item.owned && price > this.playerMoney);
+                document.getElementById('display-name').textContent = item.name || this.selectedCategory;
+                document.getElementById('display-price').textContent = (item._remove || item.remove) ? '' : (item.owned ? 'Owned' : '$' + price.toFixed(2));
+            },
+
+            applyCurrentItem: function() {
+                if (this.selectedCategory === '__outfits') return this.previewCurrentOutfit();
+                const items = this.categories[this.selectedCategory] || [];
+                if (!items.length) return;
+                this.currentItem = items[this.selectedItemIndex];
+                this.post('previewItem', { item: this.currentItem });
+            },
+
+            previewCurrentOutfit: function(capture) {
+                this.post('previewOutfit', { index: this.selectedOutfitIndex - 1, capture: !!capture });
+            },
+
+            setCommitState: function(canCommit, label, total) {
+                this.canCommit = !!canCommit;
+                this.cartTotal = Number(total || 0);
+                const button = document.getElementById('primary-button');
+                button.textContent = label || (this.cartTotal > 0 ? 'Buy' : 'Apply');
+                button.disabled = !this.canCommit;
+                document.getElementById('purchase-total').textContent = `Total: $${this.cartTotal.toFixed(2)}`;
+            },
+
+            updateCommitUI: function() {
+                this.setCommitState(this.canCommit, this.cartTotal > 0 ? 'Buy' : 'Apply', this.cartTotal);
+            },
+
+            commitSelection: function() {
+                if (!this.canCommit) return;
+                if (this.cartTotal > this.playerMoney) return this.showNotification('Not enough money', 'error');
+                this.post(this.cartTotal > 0 ? 'buyItem' : 'applyOutfit', {});
+            },
+
+            saveOutfit: function() { this.post('saveOutfit', {}); },
+            deleteOutfit: function() { if (this.selectedOutfitIndex > 0) this.post('deleteOutfit', { index: this.selectedOutfitIndex - 1 }); },
+
+            purchaseSuccess: function(data) {
+                this.playerMoney = Number(data.newMoney ?? this.playerMoney);
+                document.getElementById('player-cash').textContent = this.playerMoney.toFixed(2);
+                if (Array.isArray(data.boughtKeys)) {
+                    const owned = new Set(data.boughtKeys);
+                    this.items.forEach(item => { if (owned.has(item.key)) item.owned = true; });
+                }
+                this.setCommitState(false, 'Apply', 0);
+                this.showNotification('Clothing saved', 'success');
+                if (this.selectedCategory && this.selectedCategory !== '__outfits') this.updateItemInfo();
+            },
+
+            showNotification: function(text, type) {
+                const notif = document.getElementById('notification');
+                notif.className = 'notification visible ' + (type || '');
+                document.getElementById('notification-text').textContent = text;
+                setTimeout(() => notif.classList.remove('visible'), 2000);
+            },
+
+            moveCamera: function(direction) { this.post('moveCamera', { direction }); },
+            closeStore: function() { this.post('closeStore', {}); },
+            forceClose: function() {
+                this.isOpen = false;
+                document.getElementById('app').classList.remove('visible');
+                document.getElementById('ui-scale-control').classList.remove('visible');
+            }
+        };
+
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            switch (data.action) {
+                case 'open': App.init(data); break;
+                case 'close': App.forceClose(); break;
+                case 'cartUpdated': App.setCommitState(data.canCommit, data.buttonLabel, data.total); break;
+                case 'purchaseSuccess': App.purchaseSuccess(data); break;
+                case 'applySuccess': App.setCommitState(false, 'Apply', 0); App.showNotification('Outfit applied', 'success'); break;
+                case 'purchaseFailed': App.showNotification(data.reason || 'Unable to save clothing', 'error'); break;
+                case 'outfitsUpdated':
+                    App.outfits = Array.isArray(data.outfits) ? data.outfits : [];
+                    App.selectedOutfitIndex = Number(data.selectedIndex || 0);
+                    App.renderCategories();
+                    if (App.selectedCategory === '__outfits') App.renderOutfitControls();
+                    App.showNotification('Outfits updated', 'success');
+                    break;
+            }
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (!App.isOpen) return;
+            switch (event.key) {
+                case 'ArrowLeft': event.preventDefault(); App.prevItem(); break;
+                case 'ArrowRight': event.preventDefault(); App.nextItem(); break;
+                case 'ArrowUp': event.preventDefault(); App.changeCategory(-1); break;
+                case 'ArrowDown': event.preventDefault(); App.changeCategory(1); break;
+                case 'e': case 'E': case 'Enter': event.preventDefault(); App.commitSelection(); break;
+                case 'Escape': case 'Backspace': event.preventDefault(); App.closeStore(); break;
+            }
+        });
+    </script>
+</body>
+</html>

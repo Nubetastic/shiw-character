@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dress Up</title>
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --black-light: #151515;
+            --gray-dark: #292929;
+            --gray: #484848;
+            --gray-light: #999;
+            --white: #f2f2f2;
+            --white-dim: #c9c9c9;
+            --red: #a51d22;
+            --red-dark: #741418;
+            --green: #6c9f36;
+            --gold: #c99b3d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: Arial, sans-serif; color: var(--white); }
+
+        #app {
+            position: absolute;
+            inset: 0;
+            display: none;
+            transform-origin: top left;
+            pointer-events: none;
+        }
+        #app.visible { display: block; }
+
+        .left-panel {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 400px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(90deg, rgba(10,10,10,.99) 0%, rgba(10,10,10,.96) 82%, rgba(10,10,10,0) 100%);
+            pointer-events: auto;
+        }
+
+        .header { padding: 38px 30px 20px; }
+        .header h1 { font-size: 27px; font-weight: 600; letter-spacing: 5px; text-transform: uppercase; }
+        .header p { margin-top: 7px; color: var(--gray-light); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+        .red-line { height: 2px; margin-right: 42px; background: linear-gradient(90deg, var(--red), transparent); }
+
+        .menu-content { flex: 1; min-height: 0; overflow-y: auto; padding: 30px; }
+        .section-title { margin-bottom: 18px; color: var(--gray-light); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; }
+        .selector { margin-bottom: 30px; padding: 18px; background: rgba(21,21,21,.94); border-left: 3px solid var(--red); }
+        .selector-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .selector-name { font-size: 16px; letter-spacing: 2px; text-transform: uppercase; }
+        .selector-value { color: var(--gold); font-weight: 600; }
+        .selector-description { margin-top: 12px; color: var(--white-dim); font-size: 12px; }
+
+        .slider-row { display: flex; align-items: center; gap: 10px; }
+        .arrow-btn, .camera-btn {
+            width: 40px;
+            height: 40px;
+            border: 0;
+            background: var(--gray-dark);
+            color: var(--white);
+            cursor: pointer;
+            font-size: 28px;
+            transition: background .2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .arrow-btn:hover, .camera-btn:hover { background: var(--red); }
+        input[type="range"] { flex: 1; height: 8px; -webkit-appearance: none; appearance: none; background: var(--gray-dark); border-radius: 4px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; -webkit-appearance: none; appearance: none; border-radius: 50%; background: var(--red); cursor: pointer; }
+
+        .footer { flex-shrink: 0; padding: 18px 30px 30px; background: rgba(10,10,10,.98); border-top: 1px solid var(--gray-dark); }
+        .footer-btns { display: flex; gap: 10px; }
+        .action-btn { flex: 1; padding: 12px 15px; font-family: inherit; font-size: 20px; text-transform: uppercase; letter-spacing: 2px; border: none; cursor: pointer; transition: all .2s ease; }
+        .apply { background: var(--green); color: var(--white); }
+        .apply:hover { background: #5a9c2a; }
+        .exit { background: var(--gray-dark); color: var(--white); }
+        .exit:hover { background: var(--gray); }
+
+        .bottom-panel {
+            position: absolute;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        .camera-controls { display: flex; gap: 8px; }
+        .camera-btn {
+            width: 45px;
+            height: 45px;
+            background: rgba(10,10,10,.9);
+            border: 1px solid var(--gray-dark);
+            color: var(--white);
+            font-size: 23px;
+            cursor: pointer;
+            transition: all .2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .camera-btn:hover { background: rgba(139,0,0,.5); border-color: var(--red); }
+
+        .scale-control {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 2000;
+            width: 336px;
+            padding: 14.4px 19.2px;
+            display: none;
+            background: rgba(10,10,10,.94);
+            border: 1px solid var(--gray-dark);
+            box-shadow: 0 4px 18px rgba(0,0,0,.5);
+            pointer-events: auto;
+        }
+        .scale-control.visible { display: block; }
+        .scale-header { display: flex; justify-content: space-between; margin-bottom: 9.6px; }
+        .scale-label { color: var(--white-dim); font-size: 18px; letter-spacing: 1.2px; text-transform: uppercase; }
+        .scale-value { color: var(--white); font-size: 19.2px; font-weight: 700; }
+        .scale-control input { width: 100%; cursor: pointer; }
+
+        .notification {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 13px 25px;
+            display: none;
+            background: rgba(10,10,10,.96);
+            border-bottom: 2px solid var(--green);
+            pointer-events: none;
+        }
+        .notification.visible { display: block; }
+        .notification.error { border-color: var(--red); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <aside class="left-panel">
+            <div class="header">
+                <h1>Dress Up</h1>
+                <p>Outfits &amp; Looks</p>
+            </div>
+            <div class="red-line"></div>
+            <div class="menu-content">
+                <div class="section-title">Saved Styles</div>
+
+                <div class="selector">
+                    <div class="selector-header"><span class="selector-name">Outfits</span><span class="selector-value" id="outfit-value">0 / 0</span></div>
+                    <div class="slider-row">
+                        <button class="arrow-btn" onclick="App.changeOutfit(-1)">◄</button>
+                        <input id="outfit-slider" type="range" min="0" max="0" value="0" oninput="App.setOutfit(this.value)">
+                        <button class="arrow-btn" onclick="App.changeOutfit(1)">►</button>
+                    </div>
+                    <div class="selector-description" id="outfit-description">Current Outfit</div>
+                </div>
+
+                <div class="selector">
+                    <div class="selector-header"><span class="selector-name">Looks</span><span class="selector-value" id="look-value">0 / 0</span></div>
+                    <div class="slider-row">
+                        <button class="arrow-btn" onclick="App.changeLook(-1)">▼</button>
+                        <input id="look-slider" type="range" min="0" max="0" value="0" oninput="App.setLook(this.value)">
+                        <button class="arrow-btn" onclick="App.changeLook(1)">▲</button>
+                    </div>
+                    <div class="selector-description" id="look-description">Current Look</div>
+                </div>
+            </div>
+            <div class="footer">
+                <div class="footer-btns">
+                    <button class="action-btn apply" onclick="App.apply()">Apply</button>
+                    <button class="action-btn exit" onclick="App.exit()">Exit</button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="bottom-panel">
+            <div class="camera-controls">
+                <button class="camera-btn" onclick="App.moveCamera('up')">▲</button>
+                <button class="camera-btn" onclick="App.moveCamera('down')">▼</button>
+                <button class="camera-btn" onclick="App.moveCamera('left')">◄</button>
+                <button class="camera-btn" onclick="App.moveCamera('right')">►</button>
+                <button class="camera-btn" onclick="App.moveCamera('reset')">⊙</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="scale-control" id="scale-control">
+        <div class="scale-header"><span class="scale-label">Interface Scale</span><span class="scale-value" id="scale-value">1.00x</span></div>
+        <input id="scale-slider" type="range" min="0.25" max="3" step="0.05" value="1" oninput="App.previewScale(this.value)" onchange="App.saveScale(this.value)">
+    </div>
+
+    <div class="notification" id="notification"><span id="notification-text"></span></div>
+
+    <script>
+        const BASE_UI_SCALE = 1.4;
+        const App = {
+            isOpen: false,
+            outfits: [],
+            looks: [],
+            outfitIndex: 0,
+            lookIndex: 0,
+            scale: 1,
+            modifier: 0,
+
+            post(name, data) {
+                return fetch(`https://${GetParentResourceName()}/${name}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data || {})
+                });
+            },
+
+            setScale(value, modifier) {
+                this.scale = Math.max(.25, Math.min(3, Number(value) || 1));
+                if (modifier !== undefined) this.modifier = Number(modifier) || 0;
+                const effective = BASE_UI_SCALE * Math.max(.25, Math.min(3, this.scale + this.modifier));
+                const app = document.getElementById('app');
+                app.style.transform = `scale(${effective})`;
+                app.style.width = `${100 / effective}%`;
+                app.style.height = `${100 / effective}%`;
+                document.getElementById('scale-slider').value = this.scale;
+                document.getElementById('scale-value').textContent = `${this.scale.toFixed(2)}x`;
+            },
+
+            previewScale(value) { this.setScale(value); },
+            saveScale(value) { this.setScale(value); this.post('setScale', { scale: this.scale }); },
+
+            open(data) {
+                this.isOpen = true;
+                this.outfits = Array.isArray(data.outfits) ? data.outfits : [];
+                this.looks = Array.isArray(data.looks) ? data.looks : [];
+                this.outfitIndex = 0;
+                this.lookIndex = 0;
+                this.setScale(data.scale ?? 1, data.scaleModifier);
+                this.render();
+                document.getElementById('app').classList.add('visible');
+                document.getElementById('scale-control').classList.add('visible');
+                this.post('debugReady', { visible: true });
+            },
+
+            render() {
+                const outfitSlider = document.getElementById('outfit-slider');
+                outfitSlider.max = this.outfits.length;
+                outfitSlider.value = this.outfitIndex;
+                document.getElementById('outfit-value').textContent = `${this.outfitIndex} / ${this.outfits.length}`;
+                document.getElementById('outfit-description').textContent = this.outfitIndex === 0 ? 'Current Outfit' : `Saved Outfit ${this.outfitIndex}`;
+
+                const lookSlider = document.getElementById('look-slider');
+                lookSlider.max = this.looks.length;
+                lookSlider.value = this.lookIndex;
+                document.getElementById('look-value').textContent = `${this.lookIndex} / ${this.looks.length}`;
+                document.getElementById('look-description').textContent = this.lookIndex === 0 ? 'Current Look' : `Saved Look ${this.lookIndex}`;
+            },
+
+            setOutfit(value) {
+                this.outfitIndex = Math.max(0, Math.min(this.outfits.length, Number(value) || 0));
+                this.render();
+                this.post('previewOutfit', { index: this.outfitIndex });
+            },
+
+            setLook(value) {
+                this.lookIndex = Math.max(0, Math.min(this.looks.length, Number(value) || 0));
+                this.render();
+                this.post('previewLook', { index: this.lookIndex });
+            },
+
+            changeOutfit(direction) {
+                const length = this.outfits.length + 1;
+                this.setOutfit((this.outfitIndex + direction + length) % length);
+            },
+
+            changeLook(direction) {
+                const length = this.looks.length + 1;
+                this.setLook((this.lookIndex + direction + length) % length);
+            },
+
+            apply() { this.post('apply'); },
+            exit() { this.post('close'); },
+            moveCamera(direction) { this.post('moveCamera', { direction }); },
+
+            notify(message, error) {
+                const element = document.getElementById('notification');
+                element.className = 'notification visible' + (error ? ' error' : '');
+                document.getElementById('notification-text').textContent = message;
+                setTimeout(() => element.classList.remove('visible'), 2200);
+            },
+
+            forceClose() {
+                this.isOpen = false;
+                document.getElementById('app').classList.remove('visible');
+                document.getElementById('scale-control').classList.remove('visible');
+            }
+        };
+
+        window.addEventListener('message', event => {
+            const data = event.data || {};
+            if (data.action === 'open') App.open(data);
+            if (data.action === 'close') App.forceClose();
+            if (data.action === 'applied') {
+                App.outfitIndex = 0;
+                App.lookIndex = 0;
+                App.render();
+                App.notify('Outfit and Look applied');
+            }
+            if (data.action === 'error') App.notify(data.message || 'Unable to apply selection', true);
+        });
+
+        document.addEventListener('keydown', event => {
+            if (!App.isOpen) return;
+            if (event.key === 'ArrowLeft') { event.preventDefault(); App.changeOutfit(-1); }
+            if (event.key === 'ArrowRight') { event.preventDefault(); App.changeOutfit(1); }
+            if (event.key === 'ArrowUp') { event.preventDefault(); App.changeLook(-1); }
+            if (event.key === 'ArrowDown') { event.preventDefault(); App.changeLook(1); }
+            if (event.key === 'Enter' || event.key === 'e' || event.key === 'E') { event.preventDefault(); App.apply(); }
+            if (event.key === 'Escape' || event.key === 'Backspace') { event.preventDefault(); App.exit(); }
+        });
+    </script>
+</body>
+</html>
