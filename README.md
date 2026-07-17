@@ -25,6 +25,8 @@ rsg-changing_room radial menu. This is not needed, there are preset locations fo
 - Removed custom player model hash loading in favor of the streamed ped method.
     - works with db-femped and other types like it.
     - rsg-wardrobe still works with it.
+- Added router bucket switching for barber, changingroom, and clothing store.
+    - multiple players can use the same location at the same time.
 - Clothing Store
     - removed item creation. All clothes are stored data.
     - Items arranged players head to toe instead of alphabetical

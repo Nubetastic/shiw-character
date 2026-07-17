@@ -176,15 +176,6 @@ CreateThread(function()
     ]], {})
 end)
 
-RegisterNetEvent('rsg-clothingstore:server:setPrivateBucket', function()
-    local src = source
-    SetPlayerRoutingBucket(src, 1000 + src)
-end)
-
-RegisterNetEvent('rsg-clothingstore:server:setNormalBucket', function()
-    SetPlayerRoutingBucket(source, 0)
-end)
-
 RSGCore.Functions.CreateCallback('rsg-clothingstore:server:getSessionData', function(source, cb)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then cb(nil) return end

@@ -20,6 +20,21 @@ local selectedOutfitIndex = 0
 local selectedLookIndex = 0
 local baselineOutfit = {}
 local baselineStyle = {}
+local privateBucketActive = false
+
+local function EnterPrivateBucket()
+    if privateBucketActive then return end
+    privateBucketActive = true
+    TriggerServerEvent(GetCurrentResourceName() .. ':server:enterPrivateBucket')
+end
+
+local function LeavePrivateBucket()
+    if not privateBucketActive then return end
+    privateBucketActive = false
+    TriggerServerEvent(GetCurrentResourceName() .. ':server:leavePrivateBucket')
+end
+
+RegisterNetEvent('rsg-changing_room:client:enterPrivateBucket', EnterPrivateBucket)
 
 local function Debug(message, ...)
     if Config.Debug ~= true then return end
@@ -213,6 +228,7 @@ local function CloseChangingRoom(restorePreview)
 
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
+    LeavePrivateBucket()
     DestroyChangingRoomCamera()
 
     local ped = PlayerPedId()
@@ -265,6 +281,7 @@ local function ActivateChangingRoom(clothingData, savedLooks)
         openingHeading = nil
         openingPosition = nil
         activeCloakroom = nil
+        LeavePrivateBucket()
         return
     end
 
@@ -299,6 +316,7 @@ local function OpenChangingRoom(targetContext)
         if not clothingData then
             openingMenu = false
             pendingTargetContext = nil
+            LeavePrivateBucket()
             return
         end
 
@@ -459,6 +477,7 @@ RegisterCommand('dressclose', function()
 
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
+    LeavePrivateBucket()
     DestroyChangingRoomCamera()
 
     local ped = PlayerPedId()
@@ -482,6 +501,7 @@ AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     if menuOpen then RestorePreview() end
     SetNuiFocus(false, false)
+    LeavePrivateBucket()
     DestroyChangingRoomCamera()
     local ped = PlayerPedId()
     FreezeEntityPosition(ped, false)

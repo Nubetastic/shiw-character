@@ -23,7 +23,7 @@ files {
 }
 
 server_scripts {
-    'server/versionchecker.lua'
+    'server/*.lua'
 }
 
 ox_libs {

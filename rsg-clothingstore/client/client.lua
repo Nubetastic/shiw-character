@@ -25,6 +25,19 @@ local temporaryPurchaseCart = {}
 local previewApplyTokens = {}
 local uiScale = 1.0
 local storeTargetZones = {}
+local privateBucketActive = false
+
+local function EnterPrivateBucket()
+    if privateBucketActive then return end
+    privateBucketActive = true
+    TriggerServerEvent(GetCurrentResourceName() .. ':server:enterPrivateBucket')
+end
+
+local function LeavePrivateBucket()
+    if not privateBucketActive then return end
+    privateBucketActive = false
+    TriggerServerEvent(GetCurrentResourceName() .. ':server:leavePrivateBucket')
+end
 
 local function DeepCopy(value, seen)
     if type(value) ~= 'table' then return value end
@@ -323,9 +336,6 @@ local function TeleportToRoom()
     -- desired appearance in changing (change to previous in main ones)
     TriggerEvent('rsg-horses:client:DespawnForClothingStore')
     
-    local playerId = GetPlayerServerId(PlayerId())
-    TriggerServerEvent('rsg-clothingstore:server:setPrivateBucket', playerId)
-    
     -- What happens when you synchronize with resync applied to appearance (rsg-appearance)
     LocalPlayer.state:set('isInClothingStore', true, true)
     LocalPlayer.state:set('inClothingStore', true, true)
@@ -359,8 +369,6 @@ local function TeleportBack()
     DoScreenFadeOut(500)
     while not IsScreenFadedOut() do Wait(10) end
     Wait(200)
-    
-    TriggerServerEvent('rsg-clothingstore:server:setNormalBucket')
     
     -- What happens when updating appearance to synchronize with resync
     LocalPlayer.state:set('isInClothingStore', false, true)
@@ -769,6 +777,7 @@ local function OpenClothingInterface(storeId, mode)
     RSGCore.Functions.TriggerCallback('rsg-clothingstore:server:getSessionData', function(data)
         sessionBusy = false
         if not data then
+            LeavePrivateBucket()
             RSGCore.Functions.Notify('Unable to load clothing data', 'error')
             return
         end
@@ -791,6 +800,7 @@ local function OpenClothingInterface(storeId, mode)
         local items = BuildInterfaceItems(storeId, mode, isMale)
         if mode == 'shop' and #items == 0 then
             isStoreOpen = false
+            LeavePrivateBucket()
             RSGCore.Functions.Notify('No clothing is available', 'error')
             return
         end
@@ -837,6 +847,7 @@ function CloseClothingStore(force)
     
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
+    LeavePrivateBucket()
     
     DestroyStoreCam()
     RestoreOriginalClothes()
@@ -1086,6 +1097,7 @@ CreateThread(function()
                             return not isStoreOpen and not sessionBusy
                         end,
                         onSelect = function()
+                            EnterPrivateBucket()
                             OpenClothingStore(targetStoreId)
                         end,
                     },

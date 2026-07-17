@@ -14,6 +14,19 @@ local originalSkin = nil
 local looksData = {}
 local currentPaidBarberStyle = nil
 local uiScale = 1.0
+local privateBucketActive = false
+
+local function EnterPrivateBucket()
+    if privateBucketActive then return end
+    privateBucketActive = true
+    TriggerServerEvent(GetCurrentResourceName() .. ':server:enterPrivateBucket')
+end
+
+local function LeavePrivateBucket()
+    if not privateBucketActive then return end
+    privateBucketActive = false
+    TriggerServerEvent(GetCurrentResourceName() .. ':server:leavePrivateBucket')
+end
 -- Component hashes
 local HAIR_HASH = 0x864B03AE      -- hair
 local BEARD_HASH = 0xF8016BCA     -- beard (heads_accessories)
@@ -627,6 +640,7 @@ function CloseBarbershop(purchased)
 
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
+    LeavePrivateBucket()
 
     DestroyBarberCam()
 
@@ -906,6 +920,7 @@ CreateThread(function()
                         closestIdx = i
                     end
                 end
+                EnterPrivateBucket()
                 TriggerEvent('rsg-barbershop:client:openShop', closestIdx, entity)
             end,
         },
@@ -928,6 +943,7 @@ end)
 -- ==========================================
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() == resourceName then
+        LeavePrivateBucket()
         if isOpen then
             CloseBarbershop(false)
         end

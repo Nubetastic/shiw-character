@@ -48,6 +48,7 @@ CreateThread(function()
                         label = 'Open Changing Room',
                         distance = 2.5,
                         onSelect = function()
+                            TriggerEvent('rsg-changing_room:client:enterPrivateBucket')
                             TriggerEvent('rsg-changing_room:client:openAtStore', targetStoreId, cloakroomIndex)
                         end,
                     },
