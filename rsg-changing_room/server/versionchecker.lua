@@ -1,6 +1,6 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 
-local groupVersion = "1.0.0"
+local groupVersion = "1.0.1"
 
 local function versionCheckPrint(_type, log)
     local color = _type == 'success' and '^2' or '^1'
