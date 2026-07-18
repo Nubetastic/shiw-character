@@ -426,8 +426,6 @@ RegisterNUICallback('apply', function(_, cb)
         local function CompleteApply(style)
             baselineOutfit = DeepCopy(outfitResult.activeClothes or outfit)
             baselineStyle = DeepCopy(style or baselineStyle)
-            selectedOutfitIndex = 0
-            selectedLookIndex = 0
             ApplyOutfit(baselineOutfit)
             ApplyStyle(baselineStyle)
             applyingSelection = false
@@ -443,7 +441,6 @@ RegisterNUICallback('apply', function(_, cb)
         RSGCore.Functions.TriggerCallback('rsg-barbershop:server:applyLook', function(lookResult)
             if not lookResult or not lookResult.success then
                 baselineOutfit = DeepCopy(outfitResult.activeClothes or outfit)
-                selectedOutfitIndex = 0
                 ApplyOutfit(baselineOutfit)
                 ApplyStyle(baselineStyle)
                 applyingSelection = false

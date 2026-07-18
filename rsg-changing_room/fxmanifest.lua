@@ -4,7 +4,7 @@ game 'rdr3'
 lua54 'yes'
 
 description 'rsg-changing_room - outfit and looks menu'
-version '1.0.0'
+version '1.0.1'
 
 shared_scripts {
     'config.lua'

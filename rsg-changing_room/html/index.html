@@ -306,9 +306,6 @@
             if (data.action === 'open') App.open(data);
             if (data.action === 'close') App.forceClose();
             if (data.action === 'applied') {
-                App.outfitIndex = 0;
-                App.lookIndex = 0;
-                App.render();
                 App.notify('Outfit and Look applied');
             }
             if (data.action === 'error') App.notify(data.message || 'Unable to apply selection', true);
@@ -318,8 +315,8 @@
             if (!App.isOpen) return;
             if (event.key === 'ArrowLeft') { event.preventDefault(); App.changeOutfit(-1); }
             if (event.key === 'ArrowRight') { event.preventDefault(); App.changeOutfit(1); }
-            if (event.key === 'ArrowUp') { event.preventDefault(); App.changeLook(-1); }
-            if (event.key === 'ArrowDown') { event.preventDefault(); App.changeLook(1); }
+            if (event.key === 'ArrowDown') { event.preventDefault(); App.changeLook(-1); }
+            if (event.key === 'ArrowUp') { event.preventDefault(); App.changeLook(1); }
             if (event.key === 'Enter' || event.key === 'e' || event.key === 'E') { event.preventDefault(); App.apply(); }
             if (event.key === 'Escape' || event.key === 'Backspace') { event.preventDefault(); App.exit(); }
         });
