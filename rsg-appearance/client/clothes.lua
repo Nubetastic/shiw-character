@@ -3,7 +3,7 @@ local RSGCore = exports['rsg-core']:GetCoreObject()
 -- ??? ???'s ??? - debugcloth /testequip ? F8 ???
 
 local function RegisterDebugCommand(name, handler, restricted)
-    if RSG.Debug then
+    if Config.Debug == true then
         RegisterCommand(name, handler, restricted)
     end
 end

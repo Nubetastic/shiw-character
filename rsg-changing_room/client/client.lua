@@ -22,6 +22,19 @@ local baselineOutfit = {}
 local baselineStyle = {}
 local privateBucketActive = false
 
+local PRISON_OUTFIT_ITEMS = {
+    male = {
+        [0x5BA76CCF] = true,
+        [0x216612F0] = true,
+        [0x1CCEE58D] = true,
+    },
+    female = {
+        [0xB94287DF] = true,
+        [0x75BC0CF5] = true,
+        [0x14683CDF] = true,
+    },
+}
+
 local function EnterPrivateBucket()
     if privateBucketActive then return end
     privateBucketActive = true
@@ -32,6 +45,37 @@ local function LeavePrivateBucket()
     if not privateBucketActive then return end
     privateBucketActive = false
     TriggerServerEvent(GetCurrentResourceName() .. ':server:leavePrivateBucket')
+end
+
+local function IsWearingPrisonOutfit(ped)
+    local prisonItems = IsPedMale(ped) and PRISON_OUTFIT_ITEMS.male or PRISON_OUTFIT_ITEMS.female
+    local componentCount = Citizen.InvokeNative(0x90403E8107B60E81, ped, Citizen.ResultAsInteger())
+
+    for componentIndex = 0, (tonumber(componentCount) or 0) - 1 do
+        local shopItemHash = Citizen.InvokeNative(
+            0x77BA37622E22023B,
+            ped,
+            componentIndex,
+            true,
+            Citizen.PointerValueInt(),
+            Citizen.PointerValueInt(),
+            Citizen.ResultAsInteger()
+        )
+
+        if shopItemHash and prisonItems[shopItemHash & 0xFFFFFFFF] then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function DenyPrisonChangingRoomAccess()
+    exports['ox_lib']:notify({
+        title = 'Changing Room',
+        description = 'You cannot use the changing room while in prison.',
+        type = 'error',
+    })
 end
 
 RegisterNetEvent('rsg-changing_room:client:enterPrivateBucket', EnterPrivateBucket)
@@ -306,6 +350,11 @@ local function OpenChangingRoom(targetContext)
     if menuOpen or openingMenu or applyingSelection then return end
     local ped = PlayerPedId()
     if not DoesEntityExist(ped) or IsEntityDead(ped) then return end
+    if IsWearingPrisonOutfit(ped) then
+        DenyPrisonChangingRoomAccess()
+        LeavePrivateBucket()
+        return
+    end
 
     openingMenu = true
     pendingTargetContext = targetContext

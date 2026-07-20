@@ -651,6 +651,7 @@ AddEventHandler('rsg-appearance:client:ApplySkin', function(skinData, clothesDat
     print('[NakedBody] ApplySkin received: skinLoading=true, flags RESET')
 end)
 
+if Config.Debug == true then
 RegisterCommand('testnaked', function()
     local ped = PlayerPedId()
     print('=== NAKED TEST ===')
@@ -696,5 +697,7 @@ RegisterCommand('fixskintone', function(src, args)
         print('Usage: /fixskintone [1-6]')
     end
 end, false)
+
+end
 
 print('[NakedBody] v3.5 loaded (raw overlay + active removal)')

@@ -1,7 +1,9 @@
-RSG = {}
+Config = Config or {}
 
--- ★ Disable debug output. Set to true for debugging.
-RSG.Debug = false
+-- Enables debug output and registers test/debug commands.
+Config.Debug = false
+
+RSG = {}
 
 -- Use the normal streamed body components. Legacy body-fix helpers stay inert.
 _G.DisableAutomaticBodyFixes = true
@@ -79,7 +81,7 @@ RSG.RicxOutfitHideBodyMesh = {
 }
 
 -- Customizable print out available types-calls
-if not RSG.Debug then
+if not Config.Debug then
     local _originalPrint = print
     print = function(...) end
 end
