@@ -286,25 +286,12 @@
         /* BOTTOM PANEL */
         .bottom-panel {
             position: absolute;
-            bottom: 130px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 15px;
         }
-
-        .selected-item-display {
-            background: rgba(10, 10, 10, 0.9);
-            border: 1px solid var(--gray-dark);
-            padding: 12px 30px;
-            text-align: center;
-            min-width: 300px;
-        }
-
-        .selected-item-name { font-size: 23px; color: var(--white); margin-bottom: 5px; }
-        .selected-item-price { font-size: 28px; color: var(--green); font-weight: 700; }
 
         .camera-controls { display: flex; gap: 8px; }
 
@@ -413,11 +400,6 @@
         </div>
 
         <div class="bottom-panel">
-            <div class="selected-item-display" id="selected-display">
-                <div class="selected-item-name" id="display-name">Nothing selected</div>
-                <div class="selected-item-price" id="display-price"></div>
-            </div>
-            
             <div class="camera-controls">
                 <button class="camera-btn" onclick="App.moveCamera('up')">▲</button>
                 <button class="camera-btn" onclick="App.moveCamera('down')">▼</button>
@@ -451,8 +433,10 @@
             items: [],
             outfits: [],
             selectedCategory: null,
-            selectedItemIndex: 0,
-            categoryIndexes: {},
+            selectedModelIndex: 0,
+            selectedVariantIndex: 0,
+            modelIndexes: {},
+            variantIndexes: {},
             equippedKeys: {},
             selectedOutfitIndex: 0,
             currentItem: null,
@@ -461,6 +445,8 @@
             canCommit: false,
             uiScale: 1,
             scaleModifier: 0,
+            colorMax: 255,
+            colorPreviewTimer: null,
 
             categoryNames: {
                 hats: 'Hats', coats: 'Coats & Jackets', coats_closed: 'Closed Coats', vests: 'Vests',
@@ -523,10 +509,13 @@
                 this.outfits = Array.isArray(data.outfits) ? data.outfits : [];
                 this.playerMoney = Number(data.money || 0);
                 this.cartTotal = Number(data.total || 0);
+                this.colorMax = Math.max(0, Number(data.colorMax ?? 255));
                 this.canCommit = false;
                 this.selectedCategory = null;
-                this.selectedItemIndex = 0;
-                this.categoryIndexes = {};
+                this.selectedModelIndex = 0;
+                this.selectedVariantIndex = 0;
+                this.modelIndexes = {};
+                this.variantIndexes = {};
                 this.equippedKeys = data.equippedKeys || {};
                 this.selectedOutfitIndex = 0;
                 this.currentItem = null;
@@ -543,6 +532,7 @@
             buildCategories: function() {
                 const excluded = ['belt_buckles', 'talisman_belt', 'talisman_holster', 'loadouts', 'satchels', 'talisman_wrist', 'earrings'];
                 this.categories = {};
+                this.models = {};
                 for (const item of this.items) {
                     const cat = item.category || 'other';
                     if (excluded.includes(cat)) continue;
@@ -550,13 +540,21 @@
                     this.categories[cat].push(item);
                 }
                 for (const cat of Object.keys(this.categories)) {
-                    this.categories[cat].sort((a, b) => {
-                        if (a._remove || a.remove) return -1;
-                        if (b._remove || b.remove) return 1;
-                        return Number(a.price || 0) - Number(b.price || 0);
-                    });
+                    const groups = [];
+                    const lookup = new Map();
+                    for (const item of this.categories[cat]) {
+                        const modelName = (item._remove || item.remove) ? 'None' : (item.subcategory || item.name || item.key);
+                        if (!lookup.has(modelName)) {
+                            const group = { name: modelName, items: [] };
+                            lookup.set(modelName, group);
+                            if (item._remove || item.remove) groups.unshift(group); else groups.push(group);
+                        }
+                        lookup.get(modelName).items.push(item);
+                    }
+                    this.models[cat] = groups;
                 }
                 this.categories.__outfits = [];
+                this.models.__outfits = [];
             },
 
             renderCategories: function() {
@@ -564,7 +562,7 @@
                 container.innerHTML = '';
                 const sorted = this.getSortedCategories();
                 for (const cat of sorted) {
-                    const count = cat === '__outfits' ? this.outfits.length : Math.max(0, this.categories[cat].length - 1);
+                    const count = cat === '__outfits' ? this.outfits.length : Math.max(0, (this.models[cat] || []).length - 1);
                     const div = document.createElement('div');
                     div.className = 'menu-item' + (this.selectedCategory === cat ? ' active' : '');
                     div.innerHTML = `<span class="menu-label">${this.categoryNames[cat] || cat}</span><span class="menu-count">${count}</span>`;
@@ -603,15 +601,28 @@
             selectCategory: function(category) {
                 const reselectingOutfits = category === '__outfits' && this.selectedCategory === '__outfits';
                 this.selectedCategory = category;
-                let defaultIndex = 0;
+                let defaultModelIndex = 0;
+                let defaultVariantIndex = 0;
                 if (category !== '__outfits') {
                     const equippedKey = this.equippedKeys[category];
-                    const equippedIndex = equippedKey
-                        ? (this.categories[category] || []).findIndex(item => String(item.key).toLowerCase() === String(equippedKey).toLowerCase())
-                        : -1;
-                    if (equippedIndex >= 0) defaultIndex = equippedIndex;
+                    if (equippedKey) {
+                        for (let modelIndex = 0; modelIndex < (this.models[category] || []).length; modelIndex++) {
+                            const variantIndex = this.models[category][modelIndex].items.findIndex(item => String(item.key).toLowerCase() === String(equippedKey).toLowerCase());
+                            if (variantIndex >= 0) {
+                                defaultModelIndex = modelIndex;
+                                defaultVariantIndex = variantIndex;
+                                break;
+                            }
+                        }
+                    }
                 }
-                this.selectedItemIndex = this.categoryIndexes[category] === undefined ? defaultIndex : Number(this.categoryIndexes[category]);
+                const models = this.models[category] || [];
+                this.selectedModelIndex = this.modelIndexes[category] === undefined ? defaultModelIndex : Number(this.modelIndexes[category]);
+                this.selectedModelIndex = Math.max(0, Math.min(this.selectedModelIndex, Math.max(0, models.length - 1)));
+                const selectedModel = models[this.selectedModelIndex];
+                const variantKey = `${category}:${selectedModel ? selectedModel.name : ''}`;
+                const selectedDefaultVariant = this.selectedModelIndex === defaultModelIndex ? defaultVariantIndex : 0;
+                this.selectedVariantIndex = this.variantIndexes[variantKey] === undefined ? selectedDefaultVariant : Number(this.variantIndexes[variantKey]);
                 this.renderCategories();
                 document.getElementById('category-title').textContent = this.categoryNames[category] || category;
                 document.getElementById('right-panel').classList.add('visible');
@@ -631,11 +642,15 @@
             renderItemsSlider: function() {
                 const container = document.getElementById('items-controls');
                 container.innerHTML = '';
-                const items = this.categories[this.selectedCategory] || [];
-                if (!items.length) return;
-                container.innerHTML = `<div class="control-group"><div class="control-label"><span class="name">Variant</span><span class="value" id="item-counter">1 / ${items.length}</span></div><div class="slider-row"><button class="slider-btn" onclick="App.prevItem()">◄</button><input type="range" id="item-slider" min="0" max="${items.length - 1}" value="0" oninput="App.onSliderChange(this.value)"><button class="slider-btn" onclick="App.nextItem()">►</button></div></div>`;
-                const slider = document.getElementById('item-slider');
-                if (slider) slider.value = this.selectedItemIndex;
+                const models = this.models[this.selectedCategory] || [];
+                if (!models.length) return;
+                this.selectedModelIndex = Math.max(0, Math.min(this.selectedModelIndex, models.length - 1));
+                const variants = models[this.selectedModelIndex].items;
+                this.selectedVariantIndex = Math.max(0, Math.min(this.selectedVariantIndex, variants.length - 1));
+                container.innerHTML = `<div class="control-group"><div class="control-label"><span class="name">Model</span><span class="value" id="item-counter">${this.selectedModelIndex} / ${Math.max(0, models.length - 1)}</span></div><div class="slider-row"><button class="slider-btn" onclick="App.prevItem()">◄</button><input type="range" id="item-slider" min="0" max="${models.length - 1}" value="${this.selectedModelIndex}" oninput="App.onSliderChange(this.value)"><button class="slider-btn" onclick="App.nextItem()">►</button></div></div><div class="control-group"><div class="control-label"><span class="name">Variant</span><span class="value" id="variant-counter">${this.selectedVariantIndex} / ${Math.max(0, variants.length - 1)}</span></div><div class="slider-row"><button class="slider-btn" ${variants.length > 1 ? '' : 'disabled'} onclick="App.prevVariant()">◄</button><input type="range" id="variant-slider" min="0" max="${Math.max(0, variants.length - 1)}" value="${this.selectedVariantIndex}" ${variants.length > 1 ? '' : 'disabled'} oninput="App.onVariantSliderChange(this.value)"><button class="slider-btn" ${variants.length > 1 ? '' : 'disabled'} onclick="App.nextVariant()">►</button></div></div>`;
+                const colorControls = document.createElement('div');
+                colorControls.id = 'color-controls';
+                container.appendChild(colorControls);
                 this.updateItemInfo();
             },
 
@@ -653,22 +668,31 @@
                 document.getElementById('item-counter').textContent = `${this.selectedOutfitIndex} / ${count}`;
                 document.getElementById('info-name').textContent = this.selectedOutfitIndex === 0 ? 'Current clothes (Outfit 0)' : `Outfit ${this.selectedOutfitIndex}`;
                 document.getElementById('info-price').textContent = '';
-                document.getElementById('display-name').textContent = this.selectedOutfitIndex === 0 ? 'Current clothes (Outfit 0)' : `Outfit ${this.selectedOutfitIndex}`;
-                document.getElementById('display-price').textContent = '';
             },
 
             currentListLength: function() {
-                return this.selectedCategory === '__outfits' ? this.outfits.length + 1 : (this.categories[this.selectedCategory] || []).length;
+                return this.selectedCategory === '__outfits' ? this.outfits.length + 1 : (this.models[this.selectedCategory] || []).length;
             },
 
             onSliderChange: function(value) {
                 if (this.selectedCategory === '__outfits') this.selectedOutfitIndex = Number(value);
                 else {
-                    this.selectedItemIndex = Number(value);
-                    this.categoryIndexes[this.selectedCategory] = this.selectedItemIndex;
+                    this.selectedModelIndex = Number(value);
+                    this.selectedVariantIndex = 0;
+                    this.modelIndexes[this.selectedCategory] = this.selectedModelIndex;
+                    const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                    if (model) this.variantIndexes[`${this.selectedCategory}:${model.name}`] = 0;
                 }
                 this.applyCurrentItem();
-                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else this.updateItemInfo();
+                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else this.renderItemsSlider();
+            },
+
+            onVariantSliderChange: function(value) {
+                this.selectedVariantIndex = Number(value);
+                const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                if (model) this.variantIndexes[`${this.selectedCategory}:${model.name}`] = this.selectedVariantIndex;
+                this.applyCurrentItem();
+                this.updateItemInfo();
             },
 
             prevItem: function() {
@@ -676,11 +700,14 @@
                 if (!length) return;
                 if (this.selectedCategory === '__outfits') this.selectedOutfitIndex = this.selectedOutfitIndex > 0 ? this.selectedOutfitIndex - 1 : length - 1;
                 else {
-                    this.selectedItemIndex = this.selectedItemIndex > 0 ? this.selectedItemIndex - 1 : length - 1;
-                    this.categoryIndexes[this.selectedCategory] = this.selectedItemIndex;
+                    this.selectedModelIndex = this.selectedModelIndex > 0 ? this.selectedModelIndex - 1 : length - 1;
+                    this.selectedVariantIndex = 0;
+                    this.modelIndexes[this.selectedCategory] = this.selectedModelIndex;
+                    const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                    if (model) this.variantIndexes[`${this.selectedCategory}:${model.name}`] = 0;
                 }
                 this.applyCurrentItem();
-                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else { document.getElementById('item-slider').value = this.selectedItemIndex; this.updateItemInfo(); }
+                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else this.renderItemsSlider();
             },
 
             nextItem: function() {
@@ -688,32 +715,91 @@
                 if (!length) return;
                 if (this.selectedCategory === '__outfits') this.selectedOutfitIndex = this.selectedOutfitIndex < length - 1 ? this.selectedOutfitIndex + 1 : 0;
                 else {
-                    this.selectedItemIndex = this.selectedItemIndex < length - 1 ? this.selectedItemIndex + 1 : 0;
-                    this.categoryIndexes[this.selectedCategory] = this.selectedItemIndex;
+                    this.selectedModelIndex = this.selectedModelIndex < length - 1 ? this.selectedModelIndex + 1 : 0;
+                    this.selectedVariantIndex = 0;
+                    this.modelIndexes[this.selectedCategory] = this.selectedModelIndex;
+                    const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                    if (model) this.variantIndexes[`${this.selectedCategory}:${model.name}`] = 0;
                 }
                 this.applyCurrentItem();
-                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else { document.getElementById('item-slider').value = this.selectedItemIndex; this.updateItemInfo(); }
+                if (this.selectedCategory === '__outfits') this.renderOutfitControls(); else this.renderItemsSlider();
+            },
+
+            prevVariant: function() {
+                const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                if (!model || model.items.length < 2) return;
+                this.selectedVariantIndex = this.selectedVariantIndex > 0 ? this.selectedVariantIndex - 1 : model.items.length - 1;
+                this.variantIndexes[`${this.selectedCategory}:${model.name}`] = this.selectedVariantIndex;
+                this.applyCurrentItem();
+                document.getElementById('variant-slider').value = this.selectedVariantIndex;
+                this.updateItemInfo();
+            },
+
+            nextVariant: function() {
+                const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                if (!model || model.items.length < 2) return;
+                this.selectedVariantIndex = this.selectedVariantIndex < model.items.length - 1 ? this.selectedVariantIndex + 1 : 0;
+                this.variantIndexes[`${this.selectedCategory}:${model.name}`] = this.selectedVariantIndex;
+                this.applyCurrentItem();
+                document.getElementById('variant-slider').value = this.selectedVariantIndex;
+                this.updateItemInfo();
             },
 
             updateItemInfo: function() {
-                const items = this.categories[this.selectedCategory] || [];
-                if (!items.length) return;
-                const item = items[this.selectedItemIndex];
+                const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                if (!model || !model.items.length) return;
+                const item = model.items[this.selectedVariantIndex];
                 this.currentItem = item;
+                this.renderColorControls(item);
                 const price = Number(item.price || 0);
-                document.getElementById('item-counter').textContent = `${this.selectedItemIndex} / ${Math.max(0, items.length - 1)}`;
+                document.getElementById('item-counter').textContent = `${this.selectedModelIndex} / ${Math.max(0, (this.models[this.selectedCategory] || []).length - 1)}`;
+                document.getElementById('variant-counter').textContent = `${this.selectedVariantIndex} / ${Math.max(0, model.items.length - 1)}`;
                 document.getElementById('info-name').textContent = item.name || this.selectedCategory;
                 document.getElementById('info-price').textContent = (item._remove || item.remove) ? '' : (item.owned ? 'Owned' : '$' + price.toFixed(2));
                 document.getElementById('info-price').classList.toggle('expensive', !item.owned && price > this.playerMoney);
-                document.getElementById('display-name').textContent = item.name || this.selectedCategory;
-                document.getElementById('display-price').textContent = (item._remove || item.remove) ? '' : (item.owned ? 'Owned' : '$' + price.toFixed(2));
+            },
+
+            renderColorControls: function(item) {
+                const container = document.getElementById('color-controls');
+                if (!container) return;
+                const channelCount = this.mode === 'shop' && !item.remove && !item._remove
+                    ? Math.max(0, Math.min(3, Number(item.colorChannels || 0)))
+                    : 0;
+                if (!channelCount) {
+                    container.innerHTML = '';
+                    return;
+                }
+                const sourceTints = Array.isArray(item.tints)
+                    ? item.tints
+                    : [item.palette1 || 0, item.palette2 || 0, item.palette3 || 0];
+                item.tints = [0, 1, 2].map(index => Math.max(0, Math.min(this.colorMax, Number(sourceTints[index] || 0))));
+                const labels = ['Primary', 'Secondary', 'Detail'];
+                container.innerHTML = item.tints.slice(0, channelCount).map((value, index) => `<div class="control-group"><div class="control-label"><span class="name">${labels[index]}</span><span class="value" id="tint-value-${index}">${value}</span></div><div class="slider-row"><button class="slider-btn" onclick="App.stepTint(${index}, -1)">◄</button><input type="range" id="tint-slider-${index}" min="0" max="${this.colorMax}" step="1" value="${value}" oninput="App.onTintChange(${index}, this.value)"><button class="slider-btn" onclick="App.stepTint(${index}, 1)">►</button></div></div>`).join('');
+            },
+
+            onTintChange: function(index, value) {
+                if (!this.currentItem || !Array.isArray(this.currentItem.tints)) return;
+                const tint = Math.max(0, Math.min(this.colorMax, Number(value) || 0));
+                this.currentItem.tints[index] = tint;
+                document.getElementById(`tint-value-${index}`).textContent = tint;
+                const slider = document.getElementById(`tint-slider-${index}`);
+                if (slider) slider.value = tint;
+                clearTimeout(this.colorPreviewTimer);
+                this.colorPreviewTimer = setTimeout(() => {
+                    this.post('previewItem', { item: this.currentItem });
+                }, 75);
+            },
+
+            stepTint: function(index, amount) {
+                if (!this.currentItem || !Array.isArray(this.currentItem.tints)) return;
+                this.onTintChange(index, Number(this.currentItem.tints[index] || 0) + amount);
             },
 
             applyCurrentItem: function() {
                 if (this.selectedCategory === '__outfits') return this.previewCurrentOutfit();
-                const items = this.categories[this.selectedCategory] || [];
-                if (!items.length) return;
-                this.currentItem = items[this.selectedItemIndex];
+                const model = (this.models[this.selectedCategory] || [])[this.selectedModelIndex];
+                if (!model || !model.items.length) return;
+                this.currentItem = model.items[this.selectedVariantIndex];
                 this.post('previewItem', { item: this.currentItem });
             },
 
@@ -765,6 +851,7 @@
             moveCamera: function(direction) { this.post('moveCamera', { direction }); },
             closeStore: function() { this.post('closeStore', {}); },
             forceClose: function() {
+                clearTimeout(this.colorPreviewTimer);
                 this.isOpen = false;
                 document.getElementById('app').classList.remove('visible');
                 document.getElementById('ui-scale-control').classList.remove('visible');

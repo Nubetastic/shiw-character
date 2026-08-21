@@ -17,6 +17,7 @@ local purchaseCart = {}
 local purchaseTotal = 0
 local boughtData = {}
 local boughtLookup = {}
+local boughtItemLookup = {}
 local outfitsData = {}
 local sessionBusy = false
 local temporaryOutfit = {}
@@ -123,9 +124,9 @@ local function NormalizeClientItem(item, isMale)
         texture = tonumber(item.texture or item._t) or 1,
         palette = item.pal or item.palette or item._p or 'tint_generic_clean',
         tints = {
-            tonumber(tints and tints[1] or item.palette1) or 0,
-            tonumber(tints and tints[2] or item.palette2) or 0,
-            tonumber(tints and tints[3] or item.palette3) or 0,
+            math.max(0, math.min(Config.ColorMax, tonumber(tints and tints[1] or item.palette1) or 0)),
+            math.max(0, math.min(Config.ColorMax, tonumber(tints and tints[2] or item.palette2) or 0)),
+            math.max(0, math.min(Config.ColorMax, tonumber(tints and tints[3] or item.palette3) or 0)),
         },
         kaf = item.Kaf or item.kaf or item._kaf or 'Classic',
         draw = item.Draw or item.draw or item._draw or '',
@@ -143,10 +144,14 @@ end
 
 local function BuildBoughtLookup()
     boughtLookup = {}
+    boughtItemLookup = {}
     for _, list in pairs(boughtData or {}) do
         if type(list) == 'table' then
             for _, item in ipairs(list) do
-                if type(item) == 'table' and item.key then boughtLookup[item.key] = true end
+                if type(item) == 'table' and item.key then
+                    boughtLookup[item.key] = true
+                    boughtItemLookup[item.key] = item
+                end
             end
         end
     end
@@ -651,27 +656,6 @@ local function ApplyClothingItem(item)
         Citizen.InvokeNative(0xCC8CA3E88256E58F, ped, false, true, true, true, false)
         Wait(100)
         
-        -- What trending will reflect about PED appearance?
-        if item.pal and item.pal ~= " " and item.pal ~= "" then
-            local palette = item.pal
-            local paletteHash = GetHashKey(palette)
-            
-            if not string.find(palette:lower(), 'metaped_') then
-                paletteHash = GetHashKey('metaped_' .. palette:lower())
-            end
-            
-            local t0 = tonumber(item.palette1) or 0
-            local t1 = tonumber(item.palette2) or 0
-            local t2 = tonumber(item.palette3) or 0
-            
-            local tintHash = CategoryTintHash[category] or compHash
-            
-            print('[RSG-ClothingStore] Tint: ' .. palette .. ' Values: ' .. t0 .. ',' .. t1 .. ',' .. t2)
-            
-            Citizen.InvokeNative(0x4EFC1F8FF1AD94DE, ped, tintHash, paletteHash, t0, t1, t2)
-            Citizen.InvokeNative(0xAAB86462966168CE, ped, true)
-            Citizen.InvokeNative(0xCC8CA3E88256E58F, ped, 0, 1, 1, 1, 0)
-        end
     end
     
     -- What male-female: what caused situation appear universally stock, (never mind obvious proposal)
@@ -757,6 +741,17 @@ local function BuildInterfaceItems(storeId, mode, isMale)
         local copy = DeepCopy(item)
         copy.key = BuildItemKey(copy, isMale)
         copy.owned = boughtLookup[copy.key] == true
+        copy.colorChannels = math.max(0, math.min(3, tonumber(copy.colorChannels) or Config.ColorChannels))
+        local savedItem = boughtItemLookup[copy.key]
+        if savedItem then
+            copy.palette = savedItem.palette
+            copy.tints = DeepCopy(savedItem.tints or { 0, 0, 0 })
+        end
+        local equippedItem = openingOutfit[copy.category]
+        if equippedItem and BuildItemKey(equippedItem, isMale) == copy.key then
+            copy.palette = equippedItem.palette or copy.palette
+            copy.tints = DeepCopy(equippedItem.tints or copy.tints or { 0, 0, 0 })
+        end
         result[#result + 1] = copy
     end
     return AddRemovalVariants(result, isMale)
@@ -823,6 +818,7 @@ local function OpenClothingInterface(storeId, mode)
             equippedKeys = GetEquippedKeys(openingOutfit, isMale),
             scale = uiScale,
             scaleModifier = tonumber(Config.ScaleModifier) or 0,
+            colorMax = Config.ColorMax,
         })
     end)
 end
@@ -889,7 +885,13 @@ RegisterNUICallback('previewItem', function(data, cb)
         local opening = openingOutfit[category]
         local openingConflict = conflict and openingOutfit[conflict] or nil
         local openingKey = opening and BuildItemKey(opening, isMale) or nil
-        if (normalized.remove and not opening and not openingConflict) or (openingKey and openingKey == normalized.key) then
+        local openingItem = opening and NormalizeClientItem(opening, isMale) or nil
+        local sameAsOpening = openingItem and openingKey == normalized.key
+            and openingItem.palette == normalized.palette
+            and openingItem.tints[1] == normalized.tints[1]
+            and openingItem.tints[2] == normalized.tints[2]
+            and openingItem.tints[3] == normalized.tints[3]
+        if (normalized.remove and not opening and not openingConflict) or sameAsOpening then
             selectedByCategory[category] = nil
             purchaseCart[category] = nil
         else

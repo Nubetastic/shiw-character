@@ -734,10 +734,6 @@ end
 -- Enhanced new module v3.0
 -- ==========================================
 
-function SetTextureOutfitTints(ped, categoryHash, paletteHash, tint0, tint1, tint2)
-    Citizen.InvokeNative(0x4EFC1F8FF1AD94DE, ped, categoryHash, paletteHash, tint0, tint1, tint2)
-end
-
 local function IsPedStyleItem(itemData)
     if type(itemData) ~= 'table' then return false end
     if itemData.kaf == 'Ped' or itemData._kaf == 'Ped' then return true end
@@ -754,83 +750,23 @@ end
 
 function ApplyClothingColor(ped, category, palette, tints)
     if not category then return end
-    
-    -- Best practice for working
-    local categoryHashes = {
-    ['hats'] = 0x9925C067,
-    ['shirts_full'] = 0x2026C46D,  -- This is shirts?!  
-    ['shirts'] = 0x2026C46D,
-    ['pants'] = 0x1D4C528A,        -- This is pants?!  
-    ['boots'] = 0x777EC6EF,
-    ['vests'] = 0x485EE834,
-    ['coats'] = 0xE06D30CE,        -- This is coats?!  
-    ['coats_closed'] = 0x662AC34,  -- This is coats?!  
-    ['gloves'] = 0xEABE0032,
-    ['neckwear'] = 0x7A96FACA,     -- This is neckwear?!  
-    ['neckties'] = 0x7A96FACA,
-    ['masks'] = 0x7505EF42,
-    ['eyewear'] = 0x5F1BE9EC,      -- This is eyewear?!  
-    ['gunbelts'] = 0xF1542D11,     -- This is gunbelts?!  
-    ['satchels'] = 0x94504D26,
-    ['suspenders'] = 0x877A2CF7,
-    ['chaps'] = 0x3107499B,
-    ['spurs'] = 0x18729F39,
-    ['cloaks'] = 0x3C1A74CD,
-    ['ponchos'] = 0xAF14310B,
-    ['skirts'] = 0xA0E3AB7F,
-    ['belts'] = 0x9B2C8B89,
-    ['belt_buckles'] = 0xDA0E2C55,
-    ['dresses'] = 0x0662AC34,
-    ['corsets'] = 0x485EE834,
-    ['loadouts'] = 0x83887E88,
-    ['gauntlets'] = 0x91CE9B20,
-    ['holsters_left'] = 0x7A6BBD0B,
-    ['holsters_right'] = 0x0B3966C9,
-    ['accessories'] = 0x79D7DF96,
-    ['badges'] = 0x79D7DF96,
-    }
-    
-    local categoryHash = categoryHashes[category] or GetHashKey(category)
-    
-    -- This is related to clothing
-    local isDefaultPalette = (not palette or palette == 'tint_generic_clean' or palette == 'metaped_tint_generic_clean')
-    local hasNonZeroTints = tints and (tints[1] > 0 or tints[2] > 0 or tints[3] > 0)
-    -- This is necessary for drawing "shaders" based on the tint:
-    -- This Classic-shaders need to hash, convert tint to input shaders (coordinate, alpha).
-    if isDefaultPalette and not hasNonZeroTints then
-        return
+
+    local categoryHash = GetHashKey(category)
+    local numComponents = Citizen.InvokeNative(0x90403E8107B60E81, ped, Citizen.ResultAsInteger())
+    if numComponents then
+        for componentIndex = 0, numComponents - 1 do
+            local componentCategory = Citizen.InvokeNative(0x9B90842304C938A7, ped, componentIndex, 0, Citizen.ResultAsInteger())
+            if componentCategory == categoryHash then
+                local drawable, albedo, normal, material = GetMetaPedAssetGuids(ped, componentIndex)
+                local runtimePalette = Citizen.InvokeNative(0xE7998FEC53A33BBE, ped, componentIndex, Citizen.PointerValueInt(), Citizen.PointerValueInt(), Citizen.PointerValueInt(), Citizen.PointerValueInt())
+                Citizen.InvokeNative(0xBC6DF00D7A4A6819, ped, drawable, albedo, normal, material, runtimePalette, tints[1], tints[2], tints[3])
+                Citizen.InvokeNative(0x704C908E9C405136, ped)
+                Citizen.InvokeNative(0xCC8CA3E88256E58F, ped, false, true, true, true, false)
+                return
+            end
+        end
     end
-    
-    -- This is palette of clothes, which affect clothes
-    if not palette then
-        palette = 'tint_generic_clean'
-    end
-    
-    local paletteHash = GetHashKey(palette)
-    
-    -- This is palette of metaped_, clothes
-    if not string.find(palette, 'metaped_') then
-        paletteHash = GetHashKey('metaped_' .. palette)
-    end
-    
-    local tint0 = tints and tints[1] or 0
-    local tint1 = tints and tints[2] or 0
-    local tint2 = tints and tints[3] or 0
-    
-    print('[RSG-Clothing] ApplyColor: cat=' .. category .. ' catHash=' .. tostring(categoryHash) .. ' palette=' .. palette)
-    
-    SetTextureOutfitTints(ped, categoryHash, paletteHash, tint0, tint1, tint2)
-    Citizen.InvokeNative(0xAAB86462966168CE, ped, true)
-    -- This is shirts_full/vests/corsets - needed UpdatePedVariation (0,1,1,1,false) for shirts/kaf_bulletproof.
-    -- Needed UpdatePedVariation give special effects to players in games (databases).
-    if category == 'shirts_full' or category == 'vests' or category == 'corsets' then
-        Citizen.InvokeNative(0x704C908E9C405136, ped)
-        Citizen.InvokeNative(0xCC8CA3E88256E58F, ped, 0, 1, 1, 1, false)
-    else
-        NativeUpdatePedVariation(ped, false)
-    end
-    
-    print('[RSG-Clothing] Applied color: tints=' .. tint0 .. ',' .. tint1 .. ',' .. tint2)
+    print('[RSG-Clothing] Tint could not find category: ' .. tostring(category))
 end
 
 
@@ -1608,18 +1544,7 @@ RegisterNetEvent('rsg-clothing:client:equipClothing', function(data, options)
 
             -- Focused models guidelines.
             if data.palette and data.palette ~= "" and data.palette ~= " " then
-                local paletteHash = GetHashKey(data.palette)
-                if not string.find(data.palette:lower(), 'metaped_') then
-                    paletteHash = GetHashKey('metaped_' .. data.palette:lower())
-                end
-                local tintHash = GetTintCategoryHash(data.category)
-                Citizen.InvokeNative(0x4EFC1F8FF1AD94DE, ped, tintHash, paletteHash,
-                    data.tints and data.tints[1] or 0,
-                    data.tints and data.tints[2] or 0,
-                    data.tints and data.tints[3] or 0)
-                Citizen.InvokeNative(0xAAB86462966168CE, ped, true)
-                Citizen.InvokeNative(0x704C908E9C405136, ped)
-                Citizen.InvokeNative(0xCC8CA3E88256E58F, ped, false, true, true, true, false)
+                ApplyClothingColor(ped, data.category, data.palette, data.tints or {0, 0, 0})
             end
 
             -- Variants data
@@ -4729,28 +4654,6 @@ AddEventHandler('rsg-appearance:client:ApplyClothes', function(ClothesComponents
             Wait(100)
         end
         
--- Determine new hash when transitioning!
-        for k, v in pairs(ClothesComponents) do
-            if type(v) == 'table' and v.palette and v.tints then
--- In the same: compare Classic models under specific tint - check logs ? hash!
--- Update kaf="Classic" and kaf=nil (local case) ? compare tones - adjustments needed
-                local isClassic = (v.kaf == "Classic") or (v.kaf == nil and (not v.tints[1] or v.tints[1] == 0) and (not v.tints[2] or v.tints[2] == 0) and (not v.tints[3] or v.tints[3] == 0))
-                local isPedCoatCategory = IsPedCoatItem(k, v)
-                
-                if isClassic and not isPedCoatCategory then
-                    print('[RSG-Clothing] Skipping tint for ' .. k .. ' (Classic - color is in hash)')
-                elseif isPedCoatCategory or
-                   v.palette ~= 'tint_generic_clean' or 
-                   (v.tints[1] and v.tints[1] > 0) or 
-                   (v.tints[2] and v.tints[2] > 0) or 
-                   (v.tints[3] and v.tints[3] > 0) then
-                    ApplyClothingColor(_Target, k, v.palette, v.tints)
-                    print('[RSG-Clothing] Applied color for ' .. k .. ': palette=' .. v.palette)
-                    Wait(50)
-                end
-            end
-        end
-        
         SetEntityAlpha(_Target, 255)
         
 -- ? FIX: retrieve hair_accessories that appear (previously in logs waiting for synchronization)
@@ -4770,6 +4673,23 @@ AddEventHandler('rsg-appearance:client:ApplyClothes', function(ClothesComponents
 -- From previous item to section detail - provide morphs for specific characters
         if ReapplyBodyMorph then ReapplyBodyMorph(_Target) end
         NativeUpdatePedVariation(_Target, true)
+
+        -- Apply saved colors after the final variation refresh so Classic tints
+        -- are not replaced by the component's baked hash color.
+        for k, v in pairs(ClothesComponents) do
+            if type(v) == 'table' and v.palette and v.tints then
+                local hasTintValues = (v.tints[1] and v.tints[1] > 0)
+                    or (v.tints[2] and v.tints[2] > 0)
+                    or (v.tints[3] and v.tints[3] > 0)
+                local hasPedPalette = IsPedStyleItem(v) and v.palette ~= 'tint_generic_clean'
+
+                if hasTintValues or hasPedPalette then
+                    ApplyClothingColor(_Target, k, v.palette, v.tints)
+                    print('[RSG-Clothing] Applied saved color for ' .. k .. ': palette=' .. v.palette)
+                    Wait(50)
+                end
+            end
+        end
         -- LEGACY AUTOMATIC BODY CALLBACK DISABLED:
         -- if isOwnPed then
         --     TriggerEvent('rsg-appearance:client:RefreshClothingPreviewBody', 'outfit', false, _Target)
@@ -5608,24 +5528,6 @@ LoadClothingFromInventory = function(callback, options)
             end
         end
 
-    -- ? Ped-???: ????????? ????????? (????? palette/tints)
-        for category, data in pairs(ClothesCache) do
-            if data.kaf == "Ped" and data.palette and data.palette ~= "" and data.palette ~= " " then
-                local paletteHash = GetHashKey(data.palette)
-                if not string.find(data.palette:lower(), 'metaped_') then
-                    paletteHash = GetHashKey('metaped_' .. data.palette:lower())
-                end
-                local tintHash = GetTintCategoryHash and GetTintCategoryHash(category) or nil
-                if tintHash then
-                    Citizen.InvokeNative(0x4EFC1F8FF1AD94DE, ped, tintHash, paletteHash,
-                        data.tints and data.tints[1] or 0,
-                        data.tints and data.tints[2] or 0,
-                        data.tints and data.tints[3] or 0)
-                    Citizen.InvokeNative(0xAAB86462966168CE, ped, true)
-                end
-            end
-        end
-        
     -- ????????? ????????
         Wait(100)
         EnsureBodyIntegrity(ped, false)

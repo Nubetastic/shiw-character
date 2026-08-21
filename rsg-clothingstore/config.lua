@@ -13,6 +13,9 @@ Config.Cloakrooms = {
 
 Config.ScaleModifier = 0 -- added to the player's shared interface scale, -.25 reduces by 25%
 
+Config.ColorChannels = 3 -- default color sliders per shop item; set colorChannels = 0-3 on an item to override
+Config.ColorMax = 255
+
 Config.Stores = {
 	["blackwater"] = {
 		coords = vector3(-761.8270, -1293.6558, 43.8655), -- NPC Coords vector4(-761.8270, -1293.6558, 43.8655, 1.8674) - s_m_m_tailor_01

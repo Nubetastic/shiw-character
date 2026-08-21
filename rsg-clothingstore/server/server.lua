@@ -37,9 +37,9 @@ local function NormalizeItem(item, isMale)
     if palette == '' or palette == ' ' then palette = 'tint_generic_clean' end
     local sourceTints = item.tints or item._tints
     local tints = {
-        tonumber(sourceTints and sourceTints[1] or item.palette1) or 0,
-        tonumber(sourceTints and sourceTints[2] or item.palette2) or 0,
-        tonumber(sourceTints and sourceTints[3] or item.palette3) or 0,
+        math.max(0, math.min(Config.ColorMax, tonumber(sourceTints and sourceTints[1] or item.palette1) or 0)),
+        math.max(0, math.min(Config.ColorMax, tonumber(sourceTints and sourceTints[2] or item.palette2) or 0)),
+        math.max(0, math.min(Config.ColorMax, tonumber(sourceTints and sourceTints[3] or item.palette3) or 0)),
     }
 
     local itemIsMale = item.isMale

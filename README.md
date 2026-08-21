@@ -20,6 +20,10 @@ rsg-changing_room radial menu. This is not needed, there are preset locations fo
 
 
 ## Changes from fork
+version - 1.1.0
+- Added cloth color sliders
+
+version - 1.0.1
 - Increased ui size, added scale slide bar that to all ui. syncs between ui's.
     - Each resource has its own Config.ScaleModifier to adjust the default scale size.|}
 - Removed custom player model hash loading in favor of the streamed ped method.
