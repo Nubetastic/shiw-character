@@ -25,6 +25,12 @@ Config.Cloakrooms = {
     { coords = vector4(-1794.2617, -395.3854, 160.3665, 328.7433), cam = vector4(-1792.7876, -393.2947, 160.8697, 144.2316)}, -- strawberry
 }
 
+Config.Hours = {
+    open = 8,
+    close = 17,
+    enable = true,
+}
+
 Config.CloakRoomBlips = {
 	blipSprite = "blip_shop_wardrobe",
 	blipScale = 1,

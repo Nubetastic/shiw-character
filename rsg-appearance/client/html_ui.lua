@@ -15,6 +15,20 @@ local lastMouseX = nil
 local uiScale = 1.0
 local SHARED_SCALE_KEY = 'rsg_clothingstore'
 local LEGACY_SCALE_KEY = 'rsg_appearance'
+local BodySliderIds = {
+    body_size = true,
+    body_waist = true,
+    chest_size = true,
+    breast_size = true,
+    back_muscle = true,
+    back_shoulder_thickness = true,
+    uppr_shoulder_size = true,
+    arms_size = true,
+    waist_width = true,
+    hips_size = true,
+    tight_size = true,
+    calves_size = true,
+}
 
 local function ClampUiScale(scale)
     return math.max(0.25, math.min(3.0, tonumber(scale) or 1.0))
@@ -250,6 +264,15 @@ RegisterNUICallback('selectGender', function(data, cb)
             body_size = 3,
             body_waist = 11,
             chest_size = 6,
+            breast_size = 0,
+            back_muscle = 0,
+            back_shoulder_thickness = 0,
+            uppr_shoulder_size = 0,
+            arms_size = 0,
+            waist_width = 0,
+            hips_size = 0,
+            tight_size = 0,
+            calves_size = 0,
             height = 100,
             hair = { model = 0, color = 1 },
             beard = { model = 0, color = 1 },
@@ -269,9 +292,13 @@ RegisterNUICallback('selectGender', function(data, cb)
         Citizen.InvokeNative(0xD710A5007C2AC539, CreatorPed, 0x9B2C8B89, 0)  -- loadouts hash
         Citizen.InvokeNative(0xD710A5007C2AC539, CreatorPed, 0x877A2CF7, 0)  -- ammo belts
         Citizen.InvokeNative(0xD710A5007C2AC539, CreatorPed, 0x72E6EF74, 0)  -- accessories
-        
+
         Wait(100)
-        
+
+        if not isMale and ApplyFemaleMpMetaBasePreset then
+            ApplyFemaleMpMetaBasePreset(CreatorPed)
+        end
+
         -- False: Input doesn't match, entry was ignored - further processing can continue!
         LoadBoody(CreatorPed, CreatorCache)
         Wait(150)
@@ -317,6 +344,15 @@ RegisterNUICallback('confirmGender', function(data, cb)
         body_size = 3,
         body_waist = 11,
         chest_size = 6,
+        breast_size = 0,
+        back_muscle = 0,
+        back_shoulder_thickness = 0,
+        uppr_shoulder_size = 0,
+        arms_size = 0,
+        waist_width = 0,
+        hips_size = 0,
+        tight_size = 0,
+        calves_size = 0,
         height = 100,
     }
     
@@ -397,7 +433,7 @@ RegisterNUICallback('updateValue', function(data, cb)
         elseif id == 'skin_tone' then
             LoadHead(ped, CreatorCache)
             LoadBoody(ped, CreatorCache)
-        elseif id == 'body_size' or id == 'body_waist' or id == 'chest_size' then
+        elseif BodySliderIds[id] then
             -- A body morph: enables + facial features
             -- ApplyAllBodyMorph verifies the parameters used in the body morph (body + face features)
             -- No verify _G._BodyMorphData from guard/reapply
@@ -920,8 +956,17 @@ RegisterNUICallback('randomize', function(data, cb)
     
     -- List
     CreatorCache.body_size = math.random(1, 5)
-    CreatorCache.body_waist = math.random(1, 21)
-    CreatorCache.chest_size = math.random(1, 11)
+    CreatorCache.body_waist = 11
+    CreatorCache.chest_size = 6
+    CreatorCache.breast_size = isMale and 0 or math.random(-30, 30)
+    CreatorCache.back_muscle = math.random(-30, 30)
+    CreatorCache.back_shoulder_thickness = math.random(-30, 30)
+    CreatorCache.uppr_shoulder_size = math.random(-30, 30)
+    CreatorCache.arms_size = math.random(-30, 30)
+    CreatorCache.waist_width = math.random(-30, 30)
+    CreatorCache.hips_size = math.random(-30, 30)
+    CreatorCache.tight_size = math.random(-30, 30)
+    CreatorCache.calves_size = math.random(-30, 30)
     CreatorCache.height = math.random(95, 105)
     
     -- Ensure list

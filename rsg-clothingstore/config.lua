@@ -11,6 +11,12 @@ Config.Cloakrooms = {
 
 }
 
+Config.Hours = {
+    open = 8,
+    close = 20,
+    enable = true,
+}
+
 Config.ScaleModifier = 0 -- added to the player's shared interface scale, -.25 reduces by 25%
 
 Config.ColorChannels = 3 -- default color sliders per shop item; set colorChannels = 0-3 on an item to override
@@ -22,6 +28,7 @@ Config.Stores = {
 		exitCoords = vector3(-762.895, -1291.97, 43.894),
 		name = "Blackwater Clothing",
 		blip = true,
+		doors = {2526664466, 2751427037},
 	},
 	["rhodes"] = {
 		coords = vector3(1330.227, -1293.41, 77.021),
@@ -34,6 +41,7 @@ Config.Stores = {
 		exitCoords = vector3(2554.494873046875, -1168.68994140625, 53.79299926757812),
 		name = "Saint Denis Clothing",
 		blip = true,
+		doors = {2611615676, 3451639661, 3746429585, 1361932037},
 	},
 	["tumbleweed"] = {
 		coords = vector3(-5485.70, -2938.08, -0.299),

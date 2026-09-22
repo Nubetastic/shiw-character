@@ -685,19 +685,33 @@ end
 
 -- ? ? ? face features ? ? body morph ( ? ?)
 -- ? v8: ? ? ? waist ? ? ? ? ? ? ?
-function ApplyBodyMorphFaceFeatures(ped, waistVal, chestVal, sizeVal)
+function ApplyBodyMorphFaceFeatures(ped, waistVal, chestVal, sizeVal, fineData)
     if not ped or not DoesEntityExist(ped) then return end
+
+    fineData = fineData or {}
+
+    local function FineTune(value, adjustment, maximum)
+        if value == nil then return nil end
+        value = value + (tonumber(adjustment) or 0)
+        return math.max(-100, math.min(maximum or 100, value))
+    end
 
     -- ? ?/?
     if waistVal ~= nil and F.waist_width then
-        SetPedFaceFeature(ped, F.waist_width, waistVal)
+        SetPedFaceFeature(ped, F.waist_width, FineTune(waistVal, fineData.waist_width, 145))
     end
 
     -- ? ?
     if chestVal ~= nil then
-        if F.chest_size then SetPedFaceFeature(ped, F.chest_size, chestVal) end
-        if F.back_muscle then SetPedFaceFeature(ped, F.back_muscle, chestVal) end
-        if F.back_shoulder_thickness then SetPedFaceFeature(ped, F.back_shoulder_thickness, math.floor(chestVal * 0.7)) end
+        if F.chest_size then
+            if IsPedMale(ped) then
+                SetPedFaceFeature(ped, F.chest_size, chestVal)
+            else
+                SetPedFaceFeature(ped, F.chest_size, tonumber(fineData.breast_size) or 0)
+            end
+        end
+        if F.back_muscle then SetPedFaceFeature(ped, F.back_muscle, FineTune(chestVal, fineData.back_muscle)) end
+        if F.back_shoulder_thickness then SetPedFaceFeature(ped, F.back_shoulder_thickness, FineTune(math.floor(chestVal * 0.7), fineData.back_shoulder_thickness)) end
     end
 
     -- ? ? ? hips/thighs ? body_size ? waist ? ? ? ?
@@ -711,11 +725,11 @@ function ApplyBodyMorphFaceFeatures(ped, waistVal, chestVal, sizeVal)
     local combinedHips = math.min(100, baseSize + waistBonus)
     local combinedThighs = math.min(100, math.floor(baseSize * 0.8) + math.floor(waistBonus * 0.4))
 
-    if F.hips_size then SetPedFaceFeature(ped, F.hips_size, combinedHips) end
-    if F.tight_size then SetPedFaceFeature(ped, F.tight_size, combinedThighs) end
-    if F.calves_size then SetPedFaceFeature(ped, F.calves_size, math.floor(baseSize * 0.6)) end
-    if F.arms_size then SetPedFaceFeature(ped, F.arms_size, baseSize) end
-    if F.uppr_shoulder_size then SetPedFaceFeature(ped, F.uppr_shoulder_size, math.floor(baseSize * 0.7)) end
+    if F.hips_size then SetPedFaceFeature(ped, F.hips_size, FineTune(combinedHips, fineData.hips_size)) end
+    if F.tight_size then SetPedFaceFeature(ped, F.tight_size, FineTune(combinedThighs, fineData.tight_size)) end
+    if F.calves_size then SetPedFaceFeature(ped, F.calves_size, FineTune(math.floor(baseSize * 0.6), fineData.calves_size)) end
+    if F.arms_size then SetPedFaceFeature(ped, F.arms_size, FineTune(baseSize, fineData.arms_size)) end
+    if F.uppr_shoulder_size then SetPedFaceFeature(ped, F.uppr_shoulder_size, FineTune(math.floor(baseSize * 0.7), fineData.uppr_shoulder_size)) end
 end
 
 -- ? SetPedPortAndWeight ( ? hate_framework): ? ? body archetype ? ? ? ? ? ? ? ?
@@ -763,6 +777,15 @@ function ApplyAllBodyMorph(ped, skinData)
         waist_value = waistVal,
         chest_value = chestVal,
         size_value = sizeVal,
+        breast_size = skinData.breast_size,
+        back_muscle = skinData.back_muscle,
+        back_shoulder_thickness = skinData.back_shoulder_thickness,
+        uppr_shoulder_size = skinData.uppr_shoulder_size,
+        arms_size = skinData.arms_size,
+        waist_width = skinData.waist_width,
+        hips_size = skinData.hips_size,
+        tight_size = skinData.tight_size,
+        calves_size = skinData.calves_size,
         size_hash = nil,
         waist_hash = nil,
         chest_hash = nil,
@@ -782,7 +805,7 @@ function ApplyAllBodyMorph(ped, skinData)
     end
 
     -- ? ? 2: Face features (chest ? ? ?) ? ? ? ?
-    ApplyBodyMorphFaceFeatures(ped, waistVal, chestVal, sizeVal)
+    ApplyBodyMorphFaceFeatures(ped, waistVal, chestVal, sizeVal, skinData)
 
     -- ? ? ? UpdatePedVariation - ? ? ? ? !
 
@@ -954,7 +977,7 @@ function ReapplyBodyMorph(ped)
 
     -- ? Face features (chest ? ? ?) ? ? ? ?
     local chestVal = skipChest and nil or bm.chest_value
-    ApplyBodyMorphFaceFeatures(ped, bm.waist_value, chestVal, bm.size_value)
+    ApplyBodyMorphFaceFeatures(ped, bm.waist_value, chestVal, bm.size_value, bm)
 
     -- Legacy ? ? ?
     if bm.size_hash then SetPedBodyComponent(ped, bm.size_hash) end
@@ -986,7 +1009,8 @@ function LoadAllBodyShape(ped, skinData)
     -- (the display of UpdatePedVariation updates the face features)
     local bm = _G._BodyMorphData
     if bm and bm.active then
-        ApplyBodyMorphFaceFeatures(ped, bm.waist_value, bm.chest_value, bm.size_value)
+        local chestVal = bm.skip_chest and nil or bm.chest_value
+        ApplyBodyMorphFaceFeatures(ped, bm.waist_value, chestVal, bm.size_value, bm)
     end
 
     print('[BodyMorph] LoadAllBodyShape complete')

@@ -47,6 +47,16 @@ CreateThread(function()
                         icon = 'fa-solid fa-user-pen',
                         label = 'Open Changing Room',
                         distance = 2.5,
+                        canInteract = function()
+                            if not Config.Hours.enable then return true end
+
+                            local hour = GetClockHours()
+                            if Config.Hours.open > Config.Hours.close then
+                                return hour >= Config.Hours.open or hour < Config.Hours.close
+                            end
+
+                            return hour >= Config.Hours.open and hour < Config.Hours.close
+                        end,
                         onSelect = function()
                             TriggerEvent('rsg-changing_room:client:enterPrivateBucket')
                             TriggerEvent('rsg-changing_room:client:openAtStore', targetStoreId, cloakroomIndex)

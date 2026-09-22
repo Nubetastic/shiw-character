@@ -64,6 +64,15 @@ function EnsureFullCreatorCache()
     for k, v in pairs(overlayDefaults) do
         if CreatorCache[k] == nil then CreatorCache[k] = v end
     end
+    if CreatorCache.breast_size == nil then CreatorCache.breast_size = 0 end
+    if CreatorCache.back_muscle == nil then CreatorCache.back_muscle = 0 end
+    if CreatorCache.back_shoulder_thickness == nil then CreatorCache.back_shoulder_thickness = 0 end
+    if CreatorCache.uppr_shoulder_size == nil then CreatorCache.uppr_shoulder_size = 0 end
+    if CreatorCache.arms_size == nil then CreatorCache.arms_size = 0 end
+    if CreatorCache.waist_width == nil then CreatorCache.waist_width = 0 end
+    if CreatorCache.hips_size == nil then CreatorCache.hips_size = 0 end
+    if CreatorCache.tight_size == nil then CreatorCache.tight_size = 0 end
+    if CreatorCache.calves_size == nil then CreatorCache.calves_size = 0 end
     if not CreatorCache.hair or type(CreatorCache.hair) ~= "table" then
         CreatorCache.hair = { model = 0, color = 1, texture = 1 }
     end
@@ -101,6 +110,15 @@ function ApplyAndSaveBodyMorph(ped, skinData)
     LoadedComponents.body_size = skinData.body_size
     LoadedComponents.body_waist = skinData.body_waist
     LoadedComponents.chest_size = skinData.chest_size
+    LoadedComponents.breast_size = skinData.breast_size
+    LoadedComponents.back_muscle = skinData.back_muscle
+    LoadedComponents.back_shoulder_thickness = skinData.back_shoulder_thickness
+    LoadedComponents.uppr_shoulder_size = skinData.uppr_shoulder_size
+    LoadedComponents.arms_size = skinData.arms_size
+    LoadedComponents.waist_width = skinData.waist_width
+    LoadedComponents.hips_size = skinData.hips_size
+    LoadedComponents.tight_size = skinData.tight_size
+    LoadedComponents.calves_size = skinData.calves_size
     LoadedComponents.height = skinData.height
 
     -- ? important note: face + features, how to Wait/UpdatePedVariation
@@ -117,6 +135,15 @@ function ApplyAndSaveBodyMorphFull(ped, skinData)
     LoadedComponents.body_size = skinData.body_size
     LoadedComponents.body_waist = skinData.body_waist
     LoadedComponents.chest_size = skinData.chest_size
+    LoadedComponents.breast_size = skinData.breast_size
+    LoadedComponents.back_muscle = skinData.back_muscle
+    LoadedComponents.back_shoulder_thickness = skinData.back_shoulder_thickness
+    LoadedComponents.uppr_shoulder_size = skinData.uppr_shoulder_size
+    LoadedComponents.arms_size = skinData.arms_size
+    LoadedComponents.waist_width = skinData.waist_width
+    LoadedComponents.hips_size = skinData.hips_size
+    LoadedComponents.tight_size = skinData.tight_size
+    LoadedComponents.calves_size = skinData.calves_size
     LoadedComponents.height = skinData.height
 
     -- ? important note: face + UpdatePedVariation + generic face features
@@ -399,6 +426,15 @@ function SpawnPeds()
             body_size = 3,
             body_waist = 11,
             chest_size = 6,
+            breast_size = 0,
+            back_muscle = 0,
+            back_shoulder_thickness = 0,
+            uppr_shoulder_size = 0,
+            arms_size = 0,
+            waist_width = 0,
+            hips_size = 0,
+            tight_size = 0,
+            calves_size = 0,
             height = 100,
             hair = { model = 0, color = 1 },
             beard = { model = 0, color = 1 },
@@ -1234,6 +1270,15 @@ AddEventHandler('rsg-appearance:client:ApplySkin', function(skinData, clothesDat
         body_size = skinData.body_size,
         body_waist = skinData.body_waist,
         chest_size = skinData.chest_size,
+        breast_size = skinData.breast_size,
+        back_muscle = skinData.back_muscle,
+        back_shoulder_thickness = skinData.back_shoulder_thickness,
+        uppr_shoulder_size = skinData.uppr_shoulder_size,
+        arms_size = skinData.arms_size,
+        waist_width = skinData.waist_width,
+        hips_size = skinData.hips_size,
+        tight_size = skinData.tight_size,
+        calves_size = skinData.calves_size,
         height = skinData.height,
     }
 

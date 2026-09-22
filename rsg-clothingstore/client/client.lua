@@ -26,6 +26,7 @@ local temporaryPurchaseCart = {}
 local previewApplyTokens = {}
 local uiScale = 1.0
 local storeTargetZones = {}
+local storeBlips = {}
 local privateBucketActive = false
 
 local function EnterPrivateBucket()
@@ -757,6 +758,15 @@ local function BuildInterfaceItems(storeId, mode, isMale)
     return AddRemovalVariants(result, isMale)
 end
 
+local function IsClothingStoreOpen()
+    if not Config.Hours.enable then return true end
+    local hour = GetClockHours()
+    if Config.Hours.open > Config.Hours.close then
+        return hour >= Config.Hours.open or hour < Config.Hours.close
+    end
+    return hour >= Config.Hours.open and hour < Config.Hours.close
+end
+
 local function OpenClothingInterface(storeId, mode)
     if isStoreOpen or sessionBusy then return end
     LoadSavedStoreScale()
@@ -1096,7 +1106,7 @@ CreateThread(function()
                         label = 'Open ' .. targetStoreName,
                         distance = 2.5,
                         canInteract = function()
-                            return not isStoreOpen and not sessionBusy
+                            return not isStoreOpen and not sessionBusy and IsClothingStoreOpen()
                         end,
                         onSelect = function()
                             EnterPrivateBucket()
@@ -1112,12 +1122,70 @@ CreateThread(function()
                 SetBlipSprite(blip, GetHashKey('blip_shop_tailor'), true)
                 SetBlipScale(blip, 0.2)
                 SetBlipName(blip, tostring(storeData.name or storeId))
+                storeBlips[storeId] = blip
             end
         end)
 
         if not ok then
             print(('[rsg-clothingstore] Failed target registration for store "%s": %s'):format(tostring(storeId), tostring(err)))
         end
+    end
+end)
+
+CreateThread(function()
+    local doorUnlockUntil = {}
+    local wasWithinInteractionDistance = {}
+    while true do
+        local open = IsClothingStoreOpen()
+        local playerCoords = GetEntityCoords(PlayerPedId())
+        local now = GetGameTimer()
+        for storeId, storeData in pairs(Config.Stores) do
+            if storeData.blip == true then
+                local blip = storeBlips[storeId]
+                if blip then
+                    if open then
+                        BlipRemoveModifier(blip, GetHashKey('BLIP_MODIFIER_MP_COLOR_2'))
+                    else
+                        BlipAddModifier(blip, GetHashKey('BLIP_MODIFIER_MP_COLOR_2'))
+                    end
+                end
+            end
+            if storeData.doors then
+                local distance = #(playerCoords - storeData.coords)
+                local withinInteractionDistance = distance <= 2.5
+                if open then
+                    doorUnlockUntil[storeId] = nil
+                    wasWithinInteractionDistance[storeId] = false
+                elseif withinInteractionDistance and not wasWithinInteractionDistance[storeId]
+                    and not doorUnlockUntil[storeId] then
+                    doorUnlockUntil[storeId] = now + 30000
+                    lib.notify({
+                        title = 'Closed',
+                        description = 'Door is unlocked.',
+                        duration = 10000,
+                    })
+                end
+                if not open then
+                    wasWithinInteractionDistance[storeId] = withinInteractionDistance
+                end
+                local doorsUnlocked = open or (doorUnlockUntil[storeId] ~= nil and now < doorUnlockUntil[storeId])
+                if distance < 30.0 or doorUnlockUntil[storeId] then
+                    for _, doorHash in ipairs(storeData.doors) do
+                        if not IsDoorRegisteredWithSystem(doorHash) then
+                            Citizen.InvokeNative(0xD99229FE93B46286, doorHash, true, true, false, 0, 0, false)
+                        end
+                        if not doorsUnlocked then
+                            DoorSystemSetOpenRatio(doorHash, 0.0, true)
+                        end
+                        DoorSystemSetDoorState(doorHash, doorsUnlocked and 0 or 1)
+                    end
+                end
+                if doorUnlockUntil[storeId] and now >= doorUnlockUntil[storeId] then
+                    doorUnlockUntil[storeId] = nil
+                end
+            end
+        end
+        Wait(1000)
     end
 end)
 
@@ -1147,6 +1215,18 @@ AddEventHandler('onResourceStop', function(resourceName)
             end)
         end
         storeTargetZones = {}
+        for _, blip in pairs(storeBlips) do
+            RemoveBlip(blip)
+        end
+        for _, storeData in pairs(Config.Stores) do
+            if storeData.blip == true and storeData.doors then
+                for _, doorHash in ipairs(storeData.doors) do
+                    if IsDoorRegisteredWithSystem(doorHash) then
+                        DoorSystemSetDoorState(doorHash, 0)
+                    end
+                end
+            end
+        end
 
         if isStoreOpen then
             CloseClothingStore(true)
