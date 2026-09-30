@@ -29,6 +29,10 @@ local storeTargetZones = {}
 local storeBlips = {}
 local privateBucketActive = false
 
+WarmthClothes = {}
+WarmthCategories = {}
+PlayerWarmth = 0
+
 local function EnterPrivateBucket()
     if privateBucketActive then return end
     privateBucketActive = true
@@ -266,6 +270,81 @@ local FemaleAccessoryHashOverride = {
 local function GetComponentHashForPed(ped, category)
     return CategoryComponentHash[category]
 end
+
+local function BuildWarmthLists()
+    local checkedCategories = {}
+
+    for sex, clothes in pairs(ConfigStore.hashes) do
+        local isFemale = sex == 'mp_female'
+
+        for _, item in ipairs(clothes) do
+            local warmth = tonumber(item.warmth) or 0
+            if warmth > 0 then
+                local clothingHash = NormalizeHash(item.Hash or item.hash or item._h) & 0xFFFFFFFF
+                WarmthClothes[clothingHash] = warmth
+
+                local categoryKey = sex .. ':' .. item.category
+                if not checkedCategories[categoryKey] then
+                    local categoryHash = Citizen.InvokeNative(
+                        0x5FF9A878C3D115B8,
+                        clothingHash,
+                        isFemale,
+                        true,
+                        Citizen.ResultAsInteger()
+                    )
+                    if categoryHash and categoryHash ~= 0 then
+                        WarmthCategories[categoryHash & 0xFFFFFFFF] = true
+                        checkedCategories[categoryKey] = true
+                    end
+                end
+            end
+        end
+    end
+end
+
+CreateThread(function()
+    BuildWarmthLists()
+    local lastWarmth = nil
+
+    while true do
+        local warmth = 0
+        local ped = PlayerPedId()
+        local componentCount = Citizen.InvokeNative(0x90403E8107B60E81, ped, Citizen.ResultAsInteger())
+
+        for componentIndex = 0, (tonumber(componentCount) or 0) - 1 do
+            local categoryHash = Citizen.InvokeNative(
+                0x9B90842304C938A7,
+                ped,
+                componentIndex,
+                0,
+                Citizen.ResultAsInteger()
+            )
+
+            if categoryHash and WarmthCategories[categoryHash & 0xFFFFFFFF] then
+                local clothingHash = Citizen.InvokeNative(
+                    0x77BA37622E22023B,
+                    ped,
+                    componentIndex,
+                    true,
+                    Citizen.PointerValueInt(),
+                    Citizen.PointerValueInt(),
+                    Citizen.ResultAsInteger()
+                )
+
+                if clothingHash then
+                    warmth = warmth + (WarmthClothes[clothingHash & 0xFFFFFFFF] or 0)
+                end
+            end
+        end
+
+        if lastWarmth ~= warmth then
+            PlayerWarmth = warmth
+            exports['rsg-hud']:UpdateWarmth(PlayerWarmth)
+            lastWarmth = warmth
+        end
+        Wait(1000)
+    end
+end)
 
 -- What happens if you change color/TINT (donât forget!)
 local CategoryTintHash = {

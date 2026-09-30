@@ -16,6 +16,17 @@ local currentPaidBarberStyle = nil
 local uiScale = 1.0
 local privateBucketActive = false
 
+local function IsBarbershopOpen()
+    if not Config.Hours or not Config.Hours.enable then return true end
+
+    local hour = GetClockHours()
+    if Config.Hours.open < Config.Hours.close then
+        return hour >= Config.Hours.open and hour < Config.Hours.close
+    end
+
+    return hour >= Config.Hours.open or hour < Config.Hours.close
+end
+
 local function EnterPrivateBucket()
     if privateBucketActive then return end
     privateBucketActive = true
@@ -534,6 +545,7 @@ end
 -- ==========================================
 function OpenBarbershop(shopIndex, chairEntity)
     if isOpen then return end
+    if not IsBarbershopOpen() then return end
     LoadSharedUiScale()
 
     local shop = Config.Barbershops[shopIndex]
@@ -903,7 +915,7 @@ CreateThread(function()
             label = 'Get a haircut',
             distance = 2.0,
             canInteract = function()
-                return not isOpen
+                return not isOpen and IsBarbershopOpen()
             end,
             onSelect = function(data)
                 local entity = data.entity
@@ -930,11 +942,34 @@ CreateThread(function()
     end
 
     -- Blips
+    local barbershopBlips = {}
+    local redBlipModifier = GetHashKey('BLIP_MODIFIER_MP_COLOR_10')
+    local shopsOpen = IsBarbershopOpen()
     for i, shop in ipairs(Config.Barbershops or {}) do
         local blip = BlipAddForCoords(1664425300, shop.coords.x, shop.coords.y, shop.coords.z)
         SetBlipSprite(blip, GetHashKey('blip_shop_barber'), true)
         SetBlipScale(blip, 0.2)
         SetBlipName(blip, shop.name)
+        barbershopBlips[i] = blip
+
+        if not shopsOpen then
+            Citizen.InvokeNative(0x662D364ABF16DE2F, blip, redBlipModifier)
+        end
+    end
+
+    while true do
+        Wait(5000)
+        local currentlyOpen = IsBarbershopOpen()
+        if currentlyOpen ~= shopsOpen then
+            shopsOpen = currentlyOpen
+            for _, blip in ipairs(barbershopBlips) do
+                if shopsOpen then
+                    Citizen.InvokeNative(0xB059D7BD3D78C16F, blip, redBlipModifier)
+                else
+                    Citizen.InvokeNative(0x662D364ABF16DE2F, blip, redBlipModifier)
+                end
+            end
+        end
     end
 end)
 

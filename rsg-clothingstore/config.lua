@@ -22,6 +22,26 @@ Config.ScaleModifier = 0 -- added to the player's shared interface scale, -.25 r
 Config.ColorChannels = 3 -- default color sliders per shop item; set colorChannels = 0-3 on an item to override
 Config.ColorMax = 255
 
+Config.Warmth = {
+	ignorelist = {
+		['eyewear'] = true,
+		['suspenders'] = true,
+		['belts'] = true,
+		['belt_buckles'] = true,
+		['beltbuckle'] = true,
+		['gunbelts'] = true,
+		['holsters_left'] = true,
+		['holsters_right'] = true,
+		['jewelry_rings_right'] = true,
+		['jewelry_rings_left'] = true,
+		['rings_rh'] = true,
+		['rings_lh'] = true,
+		['jewelry_bracelets'] = true,
+		['bracelets'] = true,
+		['boot_accessories'] = true,
+	},
+}
+
 Config.Stores = {
 	["blackwater"] = {
 		coords = vector3(-761.8270, -1293.6558, 43.8655), -- NPC Coords vector4(-761.8270, -1293.6558, 43.8655, 1.8674) - s_m_m_tailor_01

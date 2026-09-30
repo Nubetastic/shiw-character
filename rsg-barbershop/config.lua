@@ -19,6 +19,18 @@ Config.Barbershops = {
         cam = vector4(-308.1042, 813.3577, 120.5554, 276.9615),
         name = "Saint-Denis Barbershop"
     },
+    {
+        coords = vector4(-3667.9290, -2596.1060, -13.5669, 186.7277),     -- Armadillo
+        cam = vector4(-308.1042, 813.3577, 120.5554, 276.9615),
+        name = "Armadillo Barbershop"
+    },
+}
+
+
+Config.Hours = {
+    open = 8,
+    close = 20,
+    enable = true,
 }
 
 -- Prices

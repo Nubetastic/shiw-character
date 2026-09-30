@@ -28,6 +28,7 @@ files {
 
 dependencies {
     'rsg-core',
+    'rsg-hud',
     'ox_lib',
     'ox_target',
     'rsg-appearance'

@@ -282,6 +282,7 @@
         .item-name { font-size: 25px; color: var(--white); margin-bottom: 8px; }
         .item-price { font-size: 30px; color: var(--green); font-weight: 700; }
         .item-price.expensive { color: var(--red); }
+        .item-warmth { font-size: 19px; color: var(--white-dim); margin-top: 8px; }
 
         /* BOTTOM PANEL */
         .bottom-panel {
@@ -395,6 +396,7 @@
                 <div class="item-info-box" id="item-info">
                     <div class="item-name" id="info-name">Select an item</div>
                     <div class="item-price" id="info-price">$0.00</div>
+                    <div class="item-warmth" id="info-warmth"></div>
                 </div>
             </div>
         </div>
@@ -668,6 +670,7 @@
                 document.getElementById('item-counter').textContent = `${this.selectedOutfitIndex} / ${count}`;
                 document.getElementById('info-name').textContent = this.selectedOutfitIndex === 0 ? 'Current clothes (Outfit 0)' : `Outfit ${this.selectedOutfitIndex}`;
                 document.getElementById('info-price').textContent = '';
+                document.getElementById('info-warmth').textContent = '';
             },
 
             currentListLength: function() {
@@ -757,6 +760,15 @@
                 document.getElementById('info-name').textContent = item.name || this.selectedCategory;
                 document.getElementById('info-price').textContent = (item._remove || item.remove) ? '' : (item.owned ? 'Owned' : '$' + price.toFixed(2));
                 document.getElementById('info-price').classList.toggle('expensive', !item.owned && price > this.playerMoney);
+                const warmth = Number(item.warmth);
+                let warmthDescription = '';
+                if (!(item._remove || item.remove) && Number.isFinite(warmth)) {
+                    if (warmth <= 2) warmthDescription = 'Ideal for warm climate';
+                    else if (warmth <= 5) warmthDescription = 'Ideal for any climate';
+                    else if (warmth <= 10) warmthDescription = 'Ideal for cold climate';
+                    else warmthDescription = 'Ideal for very cold climate';
+                }
+                document.getElementById('info-warmth').textContent = warmthDescription;
             },
 
             renderColorControls: function(item) {
